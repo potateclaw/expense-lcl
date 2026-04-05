@@ -19,11 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
+      - name: Setup Rust (Unix)
+        if: matrix.platform != 'windows-latest'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source "$HOME/.cargo/env"
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_PATH
+
+      - name: Setup Rust (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          Invoke-Expression (Invoke-WebRequest -Uri https://sh.rustup.rs -UseBasicParsing).Content
+          & rustup-init.exe -y
+          & "$env:USERPROFILE\.cargo\bin\cargo.exe" --version
 
       - name: Install dependencies (Linux)
         if: matrix.platform == 'ubuntu-latest'
@@ -31,11 +39,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libglib2.0-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
 
-      - name: Build Rust
+      - name: Build Rust (Unix)
+        if: matrix.platform != 'windows-latest'
         working-directory: src-tauri
         run: |
           source "$HOME/.cargo/env"
           cargo build --release
+
+      - name: Build Rust (Windows)
+        if: matrix.platform == 'windows-latest'
+        working-directory: src-tauri
+        run: |
+          & "$env:USERPROFILE\.cargo\bin\cargo.exe" build --release
 
       - name: Upload artifact (Linux)
         if: matrix.platform == 'ubuntu-latest'
