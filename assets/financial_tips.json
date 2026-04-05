@@ -1,0 +1,334 @@
+{
+  "tips": [
+    {
+      "id": 1,
+      "category": "Food/Dining",
+      "tip": "Cook at home at least 3-4 times per week to significantly reduce food expenses.",
+      "tags": ["cooking", "meal prep", "savings", "food"]
+    },
+    {
+      "id": 2,
+      "category": "Food/Dining",
+      "tip": "Use the 'doubling' method: double your dinner recipes and bring leftovers for lunch the next day.",
+      "tags": ["meal prep", "leftovers", "budget", "cooking"]
+    },
+    {
+      "id": 3,
+      "category": "Food/Dining",
+      "tip": "Shop with a list and avoid going to the grocery store hungry to prevent impulse purchases.",
+      "tags": ["grocery", "shopping", "planning", "impulse"]
+    },
+    {
+      "id": 4,
+      "category": "Food/Dining",
+      "tip": "Buy generic or store-brand products instead of name brands for staples like rice, pasta, and canned goods.",
+      "tags": ["generic", "store brand", "groceries", "savings"]
+    },
+    {
+      "id": 5,
+      "category": "Food/Dining",
+      "tip": "Use cashback apps like Ibotta or Fetch Rewards when shopping for groceries.",
+      "tags": ["apps", "cashback", "rewards", "groceries"]
+    },
+    {
+      "id": 6,
+      "category": "Food/Dining",
+      "tip": "Plan your weekly menu before grocery shopping to avoid unnecessary purchases.",
+      "tags": ["meal planning", "grocery", "budget", "organization"]
+    },
+    {
+      "id": 7,
+      "category": "Food/Dining",
+      "tip": "Buy seasonal fruits and vegetables as they are cheaper and fresher.",
+      "tags": ["seasonal", "produce", "fresh", "budget"]
+    },
+    {
+      "id": 8,
+      "category": "Food/Dining",
+      "tip": "Limit dining out to special occasions and set a monthly restaurant budget.",
+      "tags": ["dining out", "restaurant", "budget", "special occasions"]
+    },
+    {
+      "id": 9,
+      "category": "Transportation",
+      "tip": "Use public transportation, biking, or walking when possible to save on gas and parking.",
+      "tags": ["commute", "gas", "public transit", "savings"]
+    },
+    {
+      "id": 10,
+      "category": "Transportation",
+      "tip": "Keep your tires properly inflated to improve fuel efficiency and save money at the pump.",
+      "tags": ["fuel", "car maintenance", "efficiency", "gas"]
+    },
+    {
+      "id": 11,
+      "category": "Transportation",
+      "tip": "Comparison shop for car insurance annually - rates can vary significantly between providers.",
+      "tags": ["insurance", "car", "comparison", "savings"]
+    },
+    {
+      "id": 12,
+      "category": "Transportation",
+      "tip": "Carpool with coworkers to split gas costs and reduce wear on your vehicle.",
+      "tags": ["carpool", "commute", "gas", "savings"]
+    },
+    {
+      "id": 13,
+      "category": "Transportation",
+      "tip": "Perform regular car maintenance (oil changes, air filters) to prevent costly repairs later.",
+      "tags": ["car maintenance", "prevention", "savings", "repair"]
+    },
+    {
+      "id": 14,
+      "category": "Transportation",
+      "tip": "Consider a more fuel-efficient or electric vehicle if you have a long daily commute.",
+      "tags": ["fuel efficient", "electric", "commute", "hybrid"]
+    },
+    {
+      "id": 15,
+      "category": "Utilities",
+      "tip": "Lower your thermostat by 2-3 degrees in winter and raise it 2-3 degrees in summer to reduce energy bills.",
+      "tags": ["energy", "heating", "cooling", "utility bills"]
+    },
+    {
+      "id": 16,
+      "category": "Utilities",
+      "tip": "Unplug electronics and appliances when not in use to eliminate phantom energy drain.",
+      "tags": ["electricity", "energy", "phantom load", "savings"]
+    },
+    {
+      "id": 17,
+      "category": "Utilities",
+      "tip": "Switch to LED light bulbs which use up to 75% less energy than incandescent bulbs.",
+      "tags": ["lighting", "led", "energy", "efficiency"]
+    },
+    {
+      "id": 18,
+      "category": "Utilities",
+      "tip": "Install a smart thermostat to optimize heating and cooling based on your schedule.",
+      "tags": ["smart home", "thermostat", "energy", "savings"]
+    },
+    {
+      "id": 19,
+      "category": "Utilities",
+      "tip": "Wash clothes in cold water whenever possible to reduce water heating costs.",
+      "tags": ["laundry", "water heating", "energy", "savings"]
+    },
+    {
+      "id": 20,
+      "category": "Utilities",
+      "tip": "Check your utility provider's website for rebates on energy-efficient appliances.",
+      "tags": ["rebates", "appliances", "energy efficient", "savings"]
+    },
+    {
+      "id": 21,
+      "category": "Entertainment",
+      "tip": "Take advantage of free community events, festivals, and outdoor concerts in your area.",
+      "tags": ["free", "community", "events", "entertainment"]
+    },
+    {
+      "id": 22,
+      "category": "Entertainment",
+      "tip": "Use your local library for free books, movies, music, and even digital streaming services.",
+      "tags": ["library", "free", "books", "movies"]
+    },
+    {
+      "id": 23,
+      "category": "Entertainment",
+      "tip": "Look for 'happy hour' deals at restaurants instead of paying full price for drinks and appetizers.",
+      "tags": ["happy hour", "dining out", "discount", "entertainment"]
+    },
+    {
+      "id": 24,
+      "category": "Entertainment",
+      "tip": "Cancel unused subscriptions - audit your recurring payments and eliminate what you don't use.",
+      "tags": ["subscriptions", "streaming", "cancel", "savings"]
+    },
+    {
+      "id": 25,
+      "category": "Entertainment",
+      "tip": "Share streaming service accounts with family members to split costs.",
+      "tags": ["streaming", "sharing", "subscriptions", "savings"]
+    },
+    {
+      "id": 26,
+      "category": "Entertainment",
+      "tip": "Visit national and state parks which often have low-cost or free admission days.",
+      "tags": ["nature", "parks", "outdoors", "free"]
+    },
+    {
+      "id": 27,
+      "category": "Entertainment",
+      "tip": "Host game nights at home instead of going out for entertainment.",
+      "tags": ["social", "games", "home", "entertainment"]
+    },
+    {
+      "id": 28,
+      "category": "Shopping",
+      "tip": "Use browser extensions like Honey or Rakuten to automatically find coupons and cashback.",
+      "tags": ["coupons", "extensions", "cashback", "online shopping"]
+    },
+    {
+      "id": 29,
+      "category": "Shopping",
+      "tip": "Wait 24-48 hours before making non-essential purchases to avoid impulse buying.",
+      "tags": ["impulse", "waiting period", "shopping", "budget"]
+    },
+    {
+      "id": 30,
+      "category": "Shopping",
+      "tip": "Buy clothing at the end of seasons when they go on deep clearance.",
+      "tags": ["clothing", "clearance", "seasonal", "savings"]
+    },
+    {
+      "id": 31,
+      "category": "Shopping",
+      "tip": "Use the 'needs vs wants' test before making any purchase over $50.",
+      "tags": ["budgeting", "decision", "needs", "wants"]
+    },
+    {
+      "id": 32,
+      "category": "Shopping",
+      "tip": "Shop at thrift stores and consignment shops for clothing, furniture, and home goods.",
+      "tags": ["thrift", "used", "secondhand", "savings"]
+    },
+    {
+      "id": 33,
+      "category": "Shopping",
+      "tip": "Price match by checking if competitors offer lower prices before buying electronics or appliances.",
+      "tags": ["price match", "electronics", "appliances", "savings"]
+    },
+    {
+      "id": 34,
+      "category": "Savings strategies",
+      "tip": "Pay yourself first by automatically transferring savings to a separate account on payday.",
+      "tags": ["savings", "automatic", "payday", "priorities"]
+    },
+    {
+      "id": 35,
+      "category": "Savings strategies",
+      "tip": "Use the 24-hour rule: wait a day before any non-essential purchase over $20.",
+      "tags": ["impulse control", "waiting", "savings", "budget"]
+    },
+    {
+      "id": 36,
+      "category": "Savings strategies",
+      "tip": "Automate your savings to build an emergency fund of 3-6 months of expenses.",
+      "tags": ["emergency fund", "automation", "savings", "security"]
+    },
+    {
+      "id": 37,
+      "category": "Savings strategies",
+      "tip": "Use the 'envelope system' for discretionary spending categories like groceries and entertainment.",
+      "tags": ["cash", "envelope", "budgeting", "discretionary"]
+    },
+    {
+      "id": 38,
+      "category": "Savings strategies",
+      "tip": "Round up purchases and save the difference with apps like Acorns.",
+      "tags": ["round up", "savings", "app", "investing"]
+    },
+    {
+      "id": 39,
+      "category": "Savings strategies",
+      "tip": "Set specific savings goals with deadlines to stay motivated and track progress.",
+      "tags": ["goals", "motivation", "savings", "tracking"]
+    },
+    {
+      "id": 40,
+      "category": "Savings strategies",
+      "tip": "Cut one expensive habit (like daily coffee shop visits) and redirect that money to savings.",
+      "tags": ["habits", "coffee", "savings", "lifestyle"]
+    },
+    {
+      "id": 41,
+      "category": "Budgeting general",
+      "tip": "Track every expense for one month using an app or notebook to understand your spending patterns.",
+      "tags": ["tracking", "expenses", "awareness", "budget"]
+    },
+    {
+      "id": 42,
+      "category": "Budgeting general",
+      "tip": "Use the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment.",
+      "tags": ["budget", "rule", "needs", "wants", "savings"]
+    },
+    {
+      "id": 43,
+      "category": "Budgeting general",
+      "tip": "Review your bank and credit card statements monthly to identify spending leaks.",
+      "tags": ["review", "bank statements", "credit card", "awareness"]
+    },
+    {
+      "id": 44,
+      "category": "Budgeting general",
+      "tip": "Set up alerts for when you approach your budget limits in each spending category.",
+      "tags": ["alerts", "budget", "limits", "tracking"]
+    },
+    {
+      "id": 45,
+      "category": "Budgeting general",
+      "tip": "Use zero-based budgeting where every dollar has a job assigned to it.",
+      "tags": ["zero based", "budget", "dollar", "allocation"]
+    },
+    {
+      "id": 46,
+      "category": "Budgeting general",
+      "tip": "Review and adjust your budget monthly as income and expenses change.",
+      "tags": ["budget", "review", "adjust", "flexibility"]
+    },
+    {
+      "id": 47,
+      "category": "Budgeting general",
+      "tip": "Include occasional expenses like car repairs and holidays in your monthly budget via sinking funds.",
+      "tags": ["sinking fund", "irregular expenses", "budget", "planning"]
+    },
+    {
+      "id": 48,
+      "category": "Budgeting general",
+      "tip": "Use separate bank accounts for different savings goals to avoid temptation.",
+      "tags": ["savings", "bank accounts", "goals", "separation"]
+    },
+    {
+      "id": 49,
+      "category": "Budgeting general",
+      "tip": "Negotiate bills like internet, phone, and insurance annually to potentially lower rates.",
+      "tags": ["negotiate", "bills", "insurance", "savings"]
+    },
+    {
+      "id": 50,
+      "category": "Budgeting general",
+      "tip": "Freeze credit cards to prevent impulse purchases while building better spending habits.",
+      "tags": ["credit card", "impulse", "freeze", "habits"]
+    },
+    {
+      "id": 51,
+      "category": "Savings strategies",
+      "tip": "Take advantage of employer 401(k) matching - it's essentially free money for your retirement.",
+      "tags": ["401k", "retirement", "employer match", "savings"]
+    },
+    {
+      "id": 52,
+      "category": "Savings strategies",
+      "tip": "Open a high-yield savings account to earn more interest on your emergency fund.",
+      "tags": ["high yield", "savings account", "interest", "emergency fund"]
+    },
+    {
+      "id": 53,
+      "category": "Food/Dining",
+      "tip": "Grow your own herbs and vegetables to save money and have fresh ingredients available.",
+      "tags": ["garden", "herbs", "vegetables", "savings", "fresh"]
+    },
+    {
+      "id": 54,
+      "category": "Transportation",
+      "tip": "Work from home if possible to eliminate commuting costs entirely.",
+      "tags": ["work from home", "commute", "savings", "remote"]
+    },
+    {
+      "id": 55,
+      "category": "Utilities",
+      "tip": "Seal air leaks around windows and doors to reduce heating and cooling costs.",
+      "tags": ["insulation", "air leaks", "energy", "savings"]
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 
 mod db;
 mod llm;
+mod rag;
 mod receipt;
 mod subscription;
 mod commands;
