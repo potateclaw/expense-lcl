@@ -377,6 +377,25 @@ body {
     font-size: 18px;
 }
 
+.alert-message {
+    flex: 1;
+}
+
+.alert-dismiss {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #888;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.alert-dismiss:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
 .alert-danger {
     color: #ef4444;
 }

@@ -11,6 +11,7 @@ mod commands;
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             commands::init_db,
             commands::add_receipt,
@@ -28,7 +29,9 @@ fn main() {
             commands::add_savings_goal,
             commands::chat_query,
             commands::get_dashboard_summary,
-            commands::export_data
+            commands::export_data,
+            commands::get_active_alerts,
+            commands::dismiss_alert
         ])
         .setup(|app| {
             let app_dir = app.path().app_data_dir().unwrap();

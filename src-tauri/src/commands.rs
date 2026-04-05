@@ -66,12 +66,109 @@ pub struct SavingsGoal {
     pub current_progress: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BudgetAlert {
+    pub id: i64,
+    pub category_id: i64,
+    pub category_name: String,
+    pub threshold: f64,
+    pub percentage: f64,
+    pub is_active: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct DashboardSummary {
     pub total_expenses: f64,
     pub total_income: f64,
     pub savings_progress: f64,
     pub active_subscriptions: i64,
+}
+
+fn check_and_store_budget_alert(conn: &Connection, app: &AppHandle, category_id: i64, new_spent: f64) -> Vec<BudgetAlert> {
+    // Get category name
+    let category_name: String = conn
+        .query_row("SELECT name FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
+        .unwrap_or_else(|_| "Unknown".to_string());
+
+    // Get category budget
+    let budget: f64 = conn
+        .query_row("SELECT COALESCE(budget, 0) FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
+        .unwrap_or(0.0);
+
+    let mut triggered_alerts = Vec::new();
+
+    if budget > 0.0 {
+        let percentage = (new_spent / budget) * 100.0;
+
+        // Check 50% threshold
+        if percentage >= 50.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 50.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert.clone());
+
+            conn.execute(
+                "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
+                rusqlite::params![category_id, 50.0],
+            ).ok();
+        }
+
+        // Check 80% threshold
+        if percentage >= 80.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 80.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert.clone());
+
+            conn.execute(
+                "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
+                rusqlite::params![category_id, 80.0],
+            ).ok();
+
+            // Send notification at 80%
+            use tauri_plugin_notification::NotificationExt;
+            app.notification()
+                .builder()
+                .title("Budget Warning")
+                .body(&format!("{} is at {:.0}% of budget", category_name, percentage))
+                .show()
+                .ok();
+        }
+
+        // Check 100% threshold (exceeded)
+        if percentage >= 100.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 100.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert);
+
+            // Send notification at 100%
+            use tauri_plugin_notification::NotificationExt;
+            app.notification()
+                .builder()
+                .title("Budget Exceeded!")
+                .body(&format!("{} has exceeded its budget!", category_name))
+                .show()
+                .ok();
+        }
+    }
+
+    triggered_alerts
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -114,41 +211,52 @@ pub fn add_category(state: State<AppState>, name: String) -> Result<Category> {
 }
 
 #[tauri::command]
-pub fn add_receipt(state: State<AppState>, request: AddReceiptRequest) -> Result<Receipt> {
-    let conn = state.db.lock().unwrap();
+pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRequest) -> Result<Receipt> {
+    let category_id = request.category_id;
+    let total = request.total;
+
     let created_at = chrono::Utc::now().to_rfc3339();
 
     let receipt = Receipt {
         id: 0,
         image_path: request.image_path,
-        total: request.total,
+        total,
         tax: request.tax,
         discount: request.discount,
-        category_id: request.category_id,
+        category_id,
         project_id: request.project_id,
         is_recurring: request.is_recurring,
         created_at: created_at.clone(),
     };
 
-    let tx = conn.unchecked_transaction()?;
+    {
+        let conn = state.db.lock().unwrap();
+        let tx = conn.unchecked_transaction()?;
 
-    let receipt_id = tx.add_receipt(&receipt)?;
+        let receipt_id = tx.add_receipt(&receipt)?;
 
-    for item in &request.items {
-        let db_item = DbReceiptItem {
-            id: 0,
-            receipt_id,
-            name: item.name.clone(),
-            qty: item.qty,
-            price: item.price,
-        };
-        tx.add_receipt_item(receipt_id, &db_item)?;
+        for item in &request.items {
+            let db_item = DbReceiptItem {
+                id: 0,
+                receipt_id,
+                name: item.name.clone(),
+                qty: item.qty,
+                price: item.price,
+            };
+            tx.add_receipt_item(receipt_id, &db_item)?;
+        }
+
+        tx.commit()?;
     }
 
-    tx.commit()?;
+    // Check budget alerts after adding receipt
+    if let Some(cat_id) = category_id {
+        let conn = state.db.lock().unwrap();
+        let _ = check_and_store_budget_alert(&conn, &app, cat_id, total);
+    }
 
     Ok(Receipt {
-        id: receipt_id,
+        id: 0,
         image_path: receipt.image_path,
         total: receipt.total,
         tax: receipt.tax,
@@ -264,6 +372,147 @@ pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress
         monthly_allocation: 0.0,
         current_progress,
     })
+}
+
+#[tauri::command]
+pub fn check_budget_alerts(
+    state: State<AppState>,
+    app: AppHandle,
+    category_id: i64,
+    new_spent: f64,
+) -> Result<Vec<BudgetAlert>> {
+    let conn = state.db.lock().unwrap();
+
+    // Get category name
+    let category_name: String = conn
+        .query_row("SELECT name FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
+        .unwrap_or_else(|_| "Unknown".to_string());
+
+    // Get category budget
+    let budget: f64 = conn
+        .query_row("SELECT COALESCE(budget, 0) FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
+        .unwrap_or(0.0);
+
+    let mut triggered_alerts = Vec::new();
+
+    if budget > 0.0 {
+        let percentage = (new_spent / budget) * 100.0;
+
+        // Check 50% threshold
+        if percentage >= 50.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 50.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert.clone());
+
+            // Store in database
+            conn.execute(
+                "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
+                rusqlite::params![category_id, 50.0],
+            ).ok();
+        }
+
+        // Check 80% threshold
+        if percentage >= 80.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 80.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert.clone());
+
+            conn.execute(
+                "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
+                rusqlite::params![category_id, 80.0],
+            ).ok();
+
+            // Send notification at 80%
+            #[cfg(feature = "notification")]
+            {
+                use tauri_plugin_notification::NotificationExt;
+                app.notification()
+                    .builder()
+                    .title("Budget Warning")
+                    .body(&format!("{} is at {:.0}% of budget", category_name, percentage))
+                    .show()
+                    .ok();
+            }
+        }
+
+        // Check 100% threshold (exceeded)
+        if percentage >= 100.0 {
+            let alert = BudgetAlert {
+                id: 0,
+                category_id,
+                category_name: category_name.clone(),
+                threshold: 100.0,
+                percentage,
+                is_active: true,
+            };
+            triggered_alerts.push(alert);
+
+            // Send notification at 100%
+            #[cfg(feature = "notification")]
+            {
+                use tauri_plugin_notification::NotificationExt;
+                app.notification()
+                    .builder()
+                    .title("Budget Exceeded!")
+                    .body(&format!("{} has exceeded its budget!", category_name))
+                    .show()
+                    .ok();
+            }
+        }
+    }
+
+    Ok(triggered_alerts)
+}
+
+#[tauri::command]
+pub fn get_active_alerts(state: State<AppState>) -> Result<Vec<BudgetAlert>> {
+    let conn = state.db.lock().unwrap();
+
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.name, COALESCE(c.budget, 0),
+                COALESCE((SELECT SUM(total) FROM receipts WHERE category_id = c.id AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')), 0) as spent
+         FROM categories c"
+    )?;
+
+    let alerts: Vec<BudgetAlert> = stmt.query_map([], |row| {
+        let budget: f64 = row.get(2)?;
+        let spent: f64 = row.get(3)?;
+        let percentage = if budget > 0.0 { (spent / budget) * 100.0 } else { 0.0 };
+
+        Ok(BudgetAlert {
+            id: row.get(0)?,
+            category_id: row.get(0)?,
+            category_name: row.get(1)?,
+            threshold: if percentage >= 100.0 { 100.0 } else if percentage >= 80.0 { 80.0 } else { 50.0 },
+            percentage,
+            is_active: true,
+        })
+    })?.filter_map(|r| r.ok()).collect();
+
+    // Filter to only show categories with spending >= 50%
+    Ok(alerts.into_iter().filter(|a| a.percentage >= 50.0).collect())
+}
+
+#[tauri::command]
+pub fn dismiss_alert(state: State<AppState>, category_id: i64, threshold: f64) -> Result<()> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "DELETE FROM budget_alerts WHERE category_id = ?1 AND threshold = ?2",
+        rusqlite::params![category_id, threshold],
+    )?;
+    Ok(())
 }
 
 #[tauri::command]

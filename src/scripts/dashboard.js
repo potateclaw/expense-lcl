@@ -95,17 +95,24 @@ async function fetchDashboardData() {
         }
 
         try {
-            const transactions = await invoke('get_transactions', { limit: 5 });
+            const transactions = await invoke('get_receipts', { limit: 5 });
             dashboardData.recentTransactions = transactions || [];
         } catch (e) {
             console.log('Could not fetch transactions:', e);
         }
 
         try {
-            const spending = await invoke('get_monthly_spending');
-            dashboardData.totalSpent = spending?.total || 0;
+            const summary = await invoke('get_dashboard_summary');
+            dashboardData.totalSpent = summary?.total_expenses || 0;
         } catch (e) {
-            console.log('Could not fetch spending:', e);
+            console.log('Could not fetch summary:', e);
+        }
+
+        try {
+            const alerts = await invoke('get_active_alerts');
+            dashboardData.alerts = alerts || [];
+        } catch (e) {
+            console.log('Could not fetch alerts:', e);
         }
 
         dashboardData.currencySymbol = currencySymbol;
@@ -117,6 +124,13 @@ async function fetchDashboardData() {
 }
 
 function generateAlerts() {
+    // Use backend alerts if available, otherwise fallback to local calculation
+    if (dashboardData.alerts && dashboardData.alerts.length > 0) {
+        // Alerts from backend are already processed
+        return;
+    }
+
+    // Fallback: calculate alerts from local data
     dashboardData.alerts = [];
     const spent = dashboardData.totalSpent;
     const budget = dashboardData.monthlyBudget;
@@ -128,18 +142,21 @@ function generateAlerts() {
     if (percentage >= 100) {
         dashboardData.alerts.push({
             level: 'danger',
+            threshold: 100,
             message: 'Budget exceeded!',
             icon: '🚨'
         });
     } else if (percentage >= 80) {
         dashboardData.alerts.push({
             level: 'warning',
+            threshold: 80,
             message: 'Approaching limit (80%+)',
             icon: '⚠️'
         });
     } else if (percentage >= 50) {
         dashboardData.alerts.push({
             level: 'caution',
+            threshold: 50,
             message: 'Halfway there (50%+)',
             icon: '📍'
         });
@@ -151,12 +168,18 @@ function generateAlerts() {
             if (catPercentage >= 100) {
                 dashboardData.alerts.push({
                     level: 'danger',
+                    threshold: 100,
+                    category_id: cat.id,
+                    category_name: cat.name,
                     message: `${cat.name} budget exceeded`,
                     icon: cat.icon || '📁'
                 });
             } else if (catPercentage >= 80) {
                 dashboardData.alerts.push({
                     level: 'warning',
+                    threshold: 80,
+                    category_id: cat.id,
+                    category_name: cat.name,
                     message: `${cat.name} at ${Math.round(catPercentage)}%`,
                     icon: cat.icon || '📁'
                 });
@@ -194,10 +217,11 @@ function renderDashboard() {
 
     const alertsList = document.getElementById('alerts-list');
     if (dashboardData.alerts.length > 0) {
-        alertsList.innerHTML = dashboardData.alerts.map(alert => `
-            <div class="alert-item alert-${alert.level}">
-                <span class="alert-icon">${alert.icon}</span>
-                <span class="alert-message">${alert.message}</span>
+        alertsList.innerHTML = dashboardData.alerts.map((alert, index) => `
+            <div class="alert-item alert-${alert.level}" data-index="${index}">
+                <span class="alert-icon">${alert.icon || getAlertIcon(alert.threshold)}</span>
+                <span class="alert-message">${alert.message || alert.category_name + ' at ' + Math.round(alert.percentage) + '%'}</span>
+                <button class="alert-dismiss" onclick="dismissAlert(${alert.category_id || 0}, ${alert.threshold || 0})" title="Dismiss">×</button>
             </div>
         `).join('');
     } else {
@@ -219,6 +243,21 @@ function renderDashboard() {
         `).join('');
     } else {
         transactionsList.innerHTML = '<p class="no-transactions">No transactions yet</p>';
+    }
+}
+
+function getAlertIcon(threshold) {
+    if (threshold >= 100) return '🚨';
+    if (threshold >= 80) return '⚠️';
+    return '📍';
+}
+
+async function dismissAlert(categoryId, threshold) {
+    try {
+        await invoke('dismiss_alert', { categoryId, threshold });
+        await loadDashboard();
+    } catch (e) {
+        console.error('Error dismissing alert:', e);
     }
 }
 
