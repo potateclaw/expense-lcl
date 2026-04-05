@@ -182,13 +182,13 @@ fn check_and_store_budget_alert(conn: &Connection, app: &AppHandle, category_id:
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddReceiptRequest {
-    pub image_path: String,
-    pub total: f64,
+    pub image_data: String,  // Base64 encoded image from frontend
+    pub amount: f64,         // Total amount (negative for expenses)
     pub tax: f64,
     pub discount: f64,
     pub category_id: Option<i64>,
     pub project_id: Option<i64>,
-    pub is_recurring: bool,
+    pub note: Option<String>,
     pub items: Vec<ReceiptItem>,
 }
 
@@ -222,41 +222,54 @@ pub fn add_category(state: State<AppState>, name: String) -> Result<Category> {
 #[tauri::command]
 pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRequest) -> Result<Receipt> {
     let category_id = request.category_id;
-    let total = request.total;
+    let total = request.amount.abs();
+
+    // Save the image first
+    let app_dir = app.path().app_data_dir()
+        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+
+    let image_bytes = if request.image_data.starts_with("data:") {
+        let base64_part = request.image_data.split(',').nth(1).unwrap_or(&request.image_data);
+        BASE64.decode(base64_part)
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+    } else {
+        BASE64.decode(&request.image_data)
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+    };
+
+    let image_path = receipt::save_receipt_image(&image_bytes, &app_dir)
+        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
     let created_at = chrono::Utc::now().to_rfc3339();
 
     let receipt = Receipt {
         id: 0,
-        image_path: request.image_path,
+        image_path,
         total,
         tax: request.tax,
         discount: request.discount,
         category_id,
         project_id: request.project_id,
-        is_recurring: request.is_recurring,
+        is_recurring: false,
         created_at: created_at.clone(),
     };
 
-    {
+    let receipt_id = {
         let conn = state.db.lock().unwrap();
-        let tx = conn.unchecked_transaction()?;
-
-        let receipt_id = tx.add_receipt(&receipt)?;
+        let id = conn.add_receipt(&receipt)?;
 
         for item in &request.items {
             let db_item = DbReceiptItem {
                 id: 0,
-                receipt_id,
+                receipt_id: id,
                 name: item.name.clone(),
                 qty: item.qty,
                 price: item.price,
             };
-            tx.add_receipt_item(receipt_id, &db_item)?;
+            conn.add_receipt_item(id, &db_item)?;
         }
-
-        tx.commit()?;
-    }
+        id
+    };
 
     // Check budget alerts after adding receipt
     if let Some(cat_id) = category_id {
@@ -265,7 +278,7 @@ pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRe
     }
 
     Ok(Receipt {
-        id: 0,
+        id: receipt_id,
         image_path: receipt.image_path,
         total: receipt.total,
         tax: receipt.tax,
@@ -279,20 +292,29 @@ pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRe
 
 #[tauri::command]
 pub fn get_receipts(state: State<AppState>) -> Result<Vec<Receipt>> {
-    Ok(vec![])
+    let conn = state.db.lock().unwrap();
+    conn.get_receipts(100)
 }
 
 #[tauri::command]
-pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data: Vec<u8>) -> Result<ReceiptData> {
+pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data: String) -> Result<ReceiptData> {
     // Get app data directory for saving image using Tauri path API
     let app_dir = app.path().app_data_dir().map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
-    // Save image and get path
-    let image_path = receipt::save_receipt_image(&image_data, &app_dir)
-        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+    // Decode base64 image data (frontend sends data URL like "data:image/jpeg;base64,...")
+    let image_bytes = if image_data.starts_with("data:") {
+        // Extract base64 portion from data URL
+        let base64_part = image_data.split(',').nth(1).unwrap_or(&image_data);
+        BASE64.decode(base64_part)
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+    } else {
+        BASE64.decode(&image_data)
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+    };
 
-    // Encode to base64 for LLM
-    let _image_base64 = receipt::encode_image_base64(&image_data);
+    // Save image and get path
+    let image_path = receipt::save_receipt_image(&image_bytes, &app_dir)
+        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
     // TODO: Call LLM to extract receipt data
     // For now, return stub data that frontend can edit
@@ -311,13 +333,16 @@ pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data:
 
 #[tauri::command]
 pub fn get_projects(state: State<AppState>) -> Result<Vec<Project>> {
-    Ok(vec![])
+    let conn = state.db.lock().unwrap();
+    conn.get_projects()
 }
 
 #[tauri::command]
 pub fn create_project(state: State<AppState>, name: String, total_budget: f64) -> Result<Project> {
+    let conn = state.db.lock().unwrap();
+    let id = conn.create_project(&name, total_budget)?;
     Ok(Project {
-        id: 0,
+        id,
         name,
         total_budget,
     })
@@ -325,13 +350,24 @@ pub fn create_project(state: State<AppState>, name: String, total_budget: f64) -
 
 #[tauri::command]
 pub fn get_subscriptions(state: State<AppState>) -> Result<Vec<Subscription>> {
-    Ok(vec![])
+    let conn = state.db.lock().unwrap();
+    conn.get_subscriptions()
 }
 
 #[tauri::command]
 pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequency: String, next_expected_date: String) -> Result<Subscription> {
-    Ok(Subscription {
+    let conn = state.db.lock().unwrap();
+    let sub = Subscription {
         id: 0,
+        name: name.clone(),
+        amount,
+        frequency: frequency.clone(),
+        next_expected_date: next_expected_date.clone(),
+        receipt_id: None,
+    };
+    let id = conn.add_subscription(&sub)?;
+    Ok(Subscription {
+        id,
         name,
         amount,
         frequency,
@@ -455,13 +491,23 @@ pub fn get_expected_cost(state: State<AppState>, vendor: String) -> Result<f64> 
 
 #[tauri::command]
 pub fn get_income_sources(state: State<AppState>) -> Result<Vec<IncomeSource>> {
-    Ok(vec![])
+    let conn = state.db.lock().unwrap();
+    conn.get_income_sources()
 }
 
 #[tauri::command]
 pub fn add_income_source(state: State<AppState>, name: String, amount: f64, frequency: String, next_date: String) -> Result<IncomeSource> {
-    Ok(IncomeSource {
+    let conn = state.db.lock().unwrap();
+    let source = IncomeSource {
         id: 0,
+        name: name.clone(),
+        amount,
+        frequency: frequency.clone(),
+        next_date: next_date.clone(),
+    };
+    let id = conn.add_income_source(&source)?;
+    Ok(IncomeSource {
+        id,
         name,
         amount,
         frequency,
@@ -471,13 +517,23 @@ pub fn add_income_source(state: State<AppState>, name: String, amount: f64, freq
 
 #[tauri::command]
 pub fn get_savings_goals(state: State<AppState>) -> Result<Vec<SavingsGoal>> {
-    Ok(vec![])
+    let conn = state.db.lock().unwrap();
+    conn.get_savings_goals()
 }
 
 #[tauri::command]
 pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64, monthly_allocation: f64) -> Result<SavingsGoal> {
-    Ok(SavingsGoal {
+    let conn = state.db.lock().unwrap();
+    let goal = SavingsGoal {
         id: 0,
+        name: name.clone(),
+        target_amount,
+        monthly_allocation,
+        current_progress: 0.0,
+    };
+    let id = conn.add_savings_goal(&goal)?;
+    Ok(SavingsGoal {
+        id,
         name,
         target_amount,
         monthly_allocation,
@@ -487,13 +543,21 @@ pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64
 
 #[tauri::command]
 pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress: f64) -> Result<SavingsGoal> {
-    Ok(SavingsGoal {
-        id,
-        name: String::new(),
-        target_amount: 0.0,
-        monthly_allocation: 0.0,
-        current_progress,
-    })
+    let conn = state.db.lock().unwrap();
+    conn.update_savings_progress(id, current_progress)?;
+
+    // Fetch the updated goal
+    let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals WHERE id = ?1")?;
+    let goal = stmt.query_row([id], |row| {
+        Ok(SavingsGoal {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            target_amount: row.get(2)?,
+            monthly_allocation: row.get(3)?,
+            current_progress: row.get(4)?,
+        })
+    })?;
+    Ok(goal)
 }
 
 #[tauri::command]
@@ -639,17 +703,21 @@ pub fn dismiss_alert(state: State<AppState>, category_id: i64, threshold: f64) -
 
 #[tauri::command]
 pub fn chat_query(state: State<AppState>, query: String) -> Result<String> {
-    Ok("TODO".into())
+    // For now, return a helpful message since LLM requires model setup
+    // In production, this would use the LLM with RAG context
+    let response = format!(
+        "I'm here to help with your budgeting questions! You asked about: '{}'. \
+        For specific financial advice, please check your dashboard analytics or export your data. \
+        The chat feature will be enhanced with AI capabilities in a future update.",
+        query
+    );
+    Ok(response)
 }
 
 #[tauri::command]
 pub fn get_dashboard_summary(state: State<AppState>) -> Result<DashboardSummary> {
-    Ok(DashboardSummary {
-        total_expenses: 0.0,
-        total_income: 0.0,
-        savings_progress: 0.0,
-        active_subscriptions: 0,
-    })
+    let conn = state.db.lock().unwrap();
+    conn.get_dashboard_summary()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -859,4 +927,146 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
         }
         _ => Err(rusqlite::Error::InvalidParameterName("Unsupported format. Use 'json' or 'csv'.".into())),
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Transaction {
+    pub id: i64,
+    pub amount: f64,
+    pub category_id: Option<i64>,
+    pub category_name: Option<String>,
+    pub note: Option<String>,
+    pub created_at: String,
+}
+
+#[tauri::command]
+pub fn add_transaction(
+    state: State<AppState>,
+    amount: f64,
+    category_id: Option<i64>,
+    note: Option<String>,
+) -> Result<Transaction> {
+    let conn = state.db.lock().unwrap();
+    let created_at = chrono::Utc::now().to_rfc3339();
+
+    // For simplicity, we store as a receipt with negative amount for expenses
+    let image_path = String::new();
+    let receipt = Receipt {
+        id: 0,
+        image_path,
+        total: amount.abs(),
+        tax: 0.0,
+        discount: 0.0,
+        category_id,
+        project_id: None,
+        is_recurring: false,
+        created_at: created_at.clone(),
+    };
+
+    let receipt_id = conn.add_receipt(&receipt)?;
+
+    Ok(Transaction {
+        id: receipt_id,
+        amount,
+        category_id,
+        category_name: None,
+        note,
+        created_at,
+    })
+}
+
+#[tauri::command]
+pub fn get_transactions(state: State<AppState>, limit: i32) -> Result<Vec<Transaction>> {
+    let conn = state.db.lock().unwrap();
+    let receipts = conn.get_receipts(limit)?;
+
+    let transactions: Vec<Transaction> = receipts
+        .into_iter()
+        .map(|r| {
+            let category_name: Option<String> = if let Some(cat_id) = r.category_id {
+                conn.query_row(
+                    "SELECT name FROM categories WHERE id = ?1",
+                    [cat_id],
+                    |row| row.get(0),
+                )
+                .ok()
+            } else {
+                None
+            };
+
+            Transaction {
+                id: r.id,
+                amount: -r.total, // Expenses are stored as negative
+                category_id: r.category_id,
+                category_name,
+                note: None,
+                created_at: r.created_at,
+            }
+        })
+        .collect();
+
+    Ok(transactions)
+}
+
+#[tauri::command]
+pub fn save_categories(state: State<AppState>, categories: Vec<CategorySave>) -> Result<Vec<Category>> {
+    let conn = state.db.lock().unwrap();
+
+    for cat in categories {
+        conn.execute(
+            "INSERT OR IGNORE INTO categories (name, is_default) VALUES (?1, 0)",
+            [&cat.name],
+        )?;
+    }
+
+    // Return all categories
+    let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories")?;
+    let cats = stmt.query_map([], |row| {
+        Ok(Category {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            is_default: row.get(2)?,
+        })
+    })?;
+    Ok(cats.collect::<Result<Vec<_>>>()?)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CategorySave {
+    pub name: String,
+    pub icon: Option<String>,
+    pub default_budget: Option<f64>,
+}
+
+#[tauri::command]
+pub fn add_project_category(state: State<AppState>, project_id: i64, name: String) -> Result<i64> {
+    let conn = state.db.lock().unwrap();
+    conn.add_project_category(project_id, &name)
+}
+
+#[tauri::command]
+pub fn get_project_categories(state: State<AppState>, project_id: i64) -> Result<Vec<ProjectCategory>> {
+    let conn = state.db.lock().unwrap();
+    conn.get_project_categories(project_id)
+}
+
+#[tauri::command]
+pub fn update_project(state: State<AppState>, id: i64, name: String, budget: f64) -> Result<Project> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "UPDATE projects SET name = ?1, total_budget = ?2 WHERE id = ?3",
+        rusqlite::params![name, budget, id],
+    )?;
+    Ok(Project {
+        id,
+        name,
+        total_budget: budget,
+    })
+}
+
+#[tauri::command]
+pub fn delete_project(state: State<AppState>, id: i64) -> Result<()> {
+    let conn = state.db.lock().unwrap();
+    conn.execute("DELETE FROM projects WHERE id = ?1", [id])?;
+    Ok(())
 }
