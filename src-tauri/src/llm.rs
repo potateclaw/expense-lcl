@@ -20,7 +20,7 @@ impl LLM {
     }
 
     pub fn chat(&self, prompt: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let mut session = ChatSession::new(self.model.lock().unwrap().as_ref());
+        let mut session = ChatSession::new(self.model.lock().map_err(|e| format!("Lock poisoned: {}", e))?.as_ref());
         session.add_message("user", prompt)?;
         let response = session.complete()?;
         Ok(response.to_string())
@@ -113,7 +113,7 @@ Rules:
             context
         );
 
-        let mut session = ChatSession::new(self.model.lock().unwrap().as_ref());
+        let mut session = ChatSession::new(self.model.lock().map_err(|e| format!("Lock poisoned: {}", e))?.as_ref());
         session.add_message("system", &system_prompt)?;
         session.add_message("user", prompt)?;
         let response = session.complete()?;
