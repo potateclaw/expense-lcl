@@ -295,6 +295,7 @@ async function saveReceipt() {
         await invoke('add_receipt', {
             amount: -Math.abs(total), // Expenses are negative
             categoryId: parseInt(categoryId),
+            projectId: projectId ? parseInt(projectId) : null,
             note: note,
             tax: tax,
             discount: discount,
