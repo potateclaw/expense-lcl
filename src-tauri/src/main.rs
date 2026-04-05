@@ -31,7 +31,9 @@ fn main() {
             commands::get_dashboard_summary,
             commands::export_data,
             commands::get_active_alerts,
-            commands::dismiss_alert
+            commands::dismiss_alert,
+            commands::process_receipt_with_subscription_check,
+            commands::get_expected_cost
         ])
         .setup(|app| {
             let app_dir = app.path().app_data_dir().unwrap();

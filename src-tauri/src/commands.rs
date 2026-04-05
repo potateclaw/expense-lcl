@@ -6,6 +6,7 @@ use std::sync::Mutex;
 
 use crate::db::ReceiptItem as DbReceiptItem;
 use crate::receipt::{ReceiptData, ReceiptItem};
+use crate::subscription::{detect_subscription_pattern, calculate_expected_cost};
 
 pub struct AppState {
     pub db: Mutex<Connection>,
@@ -74,6 +75,14 @@ pub struct BudgetAlert {
     pub threshold: f64,
     pub percentage: f64,
     pub is_active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubscriptionDetection {
+    pub vendor: String,
+    pub amount: f64,
+    pub frequency: String,
+    pub is_subscription: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -329,6 +338,119 @@ pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequ
         next_expected_date,
         receipt_id: None,
     })
+}
+
+#[tauri::command]
+pub fn process_receipt_with_subscription_check(state: State<AppState>, receipt_data: ReceiptData) -> Result<SubscriptionDetection> {
+    // Get recent receipts from database to detect patterns
+    let conn = state.db.lock().unwrap();
+    let recent_receipts: Vec<Receipt> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at
+             FROM receipts ORDER BY created_at DESC LIMIT 100"
+        )?;
+        let receipts = stmt.query_map([], |row| {
+            Ok(Receipt {
+                id: row.get(0)?,
+                image_path: row.get(1)?,
+                total: row.get(2)?,
+                tax: row.get(3)?,
+                discount: row.get(4)?,
+                category_id: row.get(5)?,
+                project_id: row.get(6)?,
+                is_recurring: row.get(7)?,
+                created_at: row.get(8)?,
+            })
+        })?;
+        receipts.collect::<Result<Vec<_>>>()?
+    };
+
+    // Convert to ReceiptData format for pattern detection
+    let receipt_data_list: Vec<ReceiptData> = recent_receipts.iter().map(|r| {
+        // Try to get vendor from items, otherwise use image_path as proxy
+        let items = conn.get_receipt_items(r.id).unwrap_or_default();
+        let vendor = items.first().map(|i| i.name.clone());
+        ReceiptData {
+            image_path: r.image_path.clone(),
+            total: r.total,
+            tax: r.tax,
+            discount: r.discount,
+            items: items.iter().map(|i| ReceiptItem {
+                name: i.name.clone(),
+                qty: i.qty,
+                price: i.price,
+            }).collect(),
+            suggested_category: String::new(),
+            vendor,
+        }
+    }).collect();
+    drop(conn);
+
+    // Add current receipt to the list for pattern detection
+    let mut all_receipts = receipt_data_list;
+    all_receipts.push(receipt_data.clone());
+
+    // Check for subscription pattern
+    if let Some((vendor, amount, frequency)) = detect_subscription_pattern(&all_receipts) {
+        // Check if this specific receipt matches the pattern
+        let receipt_vendor_match = receipt_data.vendor.as_ref().map(|v| v == &vendor).unwrap_or(false);
+        let amount_diff = if receipt_data.total > 0.0 {
+            (receipt_data.total - amount).abs() / amount
+        } else {
+            1.0
+        };
+        let amount_match = amount_diff <= 0.10;
+
+        if receipt_vendor_match && amount_match {
+            return Ok(SubscriptionDetection {
+                vendor,
+                amount,
+                frequency,
+                is_subscription: true,
+            });
+        }
+    }
+
+    // No subscription pattern found
+    Ok(SubscriptionDetection {
+        vendor: receipt_data.vendor.unwrap_or_default(),
+        amount: receipt_data.total,
+        frequency: "monthly".to_string(),
+        is_subscription: false,
+    })
+}
+
+#[tauri::command]
+pub fn get_expected_cost(state: State<AppState>, vendor: String) -> Result<f64> {
+    let conn = state.db.lock().unwrap();
+    let recent_receipts: Vec<ReceiptData> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at
+             FROM receipts ORDER BY created_at DESC LIMIT 100"
+        )?;
+        let receipts = stmt.query_map([], |row| {
+            let id = row.get::<_, i64>(0)?;
+            let items = conn.get_receipt_items(id).unwrap_or_default();
+            let vendor_name = items.first().map(|i| i.name.clone());
+            Ok(ReceiptData {
+                image_path: row.get::<_, String>(1)?,
+                total: row.get::<_, f64>(2)?,
+                tax: row.get::<_, f64>(3)?,
+                discount: row.get::<_, f64>(4)?,
+                items: items.iter().map(|i| ReceiptItem {
+                    name: i.name.clone(),
+                    qty: i.qty,
+                    price: i.price,
+                }).collect(),
+                suggested_category: String::new(),
+                vendor: vendor_name,
+            })
+        })?;
+        receipts.collect::<Result<Vec<_>>>()?
+    };
+    drop(conn);
+
+    Ok(calculate_expected_cost(&recent_receipts, &vendor))
 }
 
 #[tauri::command]
