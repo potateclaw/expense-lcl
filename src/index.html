@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Budgy</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <div id="screen-container"></div>
+    </div>
+    <div id="chat-fab" onclick="toggleChat()">
+        <span>💬</span>
+    </div>
+    <div id="chat-panel" class="hidden">
+        <div id="chat-header">
+            <span>Budgy Assistant</span>
+            <button onclick="toggleChat()">×</button>
+        </div>
+        <div id="chat-messages"></div>
+        <div id="chat-input">
+            <input type="text" id="chat-text" placeholder="Ask about your spending...">
+            <button onclick="sendChat()">Send</button>
+        </div>
+    </div>
+    <script src="scripts/app.js"></script>
+</body>
+</html>

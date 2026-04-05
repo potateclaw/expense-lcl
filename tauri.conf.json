@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Budgy",
+  "version": "0.1.0",
+  "identifier": "com.budgy.app",
+  "build": {
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Budgy",
+        "width": 390,
+        "height": 844,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  }
+}
