@@ -275,9 +275,33 @@ body {
     padding: 8px 0 16px;
 }
 
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .dashboard-date {
     color: #666;
     font-size: 14px;
+}
+
+.btn-icon-header {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.btn-icon-header:hover {
+    background: var(--primary-light, rgba(99, 102, 241, 0.1));
 }
 
 .budget-overview-card {

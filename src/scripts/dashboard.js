@@ -14,7 +14,12 @@ async function loadDashboard() {
         <div class="screen dashboard">
             <div class="dashboard-header">
                 <h1>Dashboard</h1>
-                <span class="dashboard-date" id="current-month"></span>
+                <div class="dashboard-header-actions">
+                    <span class="dashboard-date" id="current-month"></span>
+                    <button class="btn-icon-header" onclick="showExportModal()" title="Export Data">
+                        <span>📤</span>
+                    </button>
+                </div>
             </div>
 
             <div class="card budget-overview-card" id="budget-overview">

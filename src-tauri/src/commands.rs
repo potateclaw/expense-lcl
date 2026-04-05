@@ -281,7 +281,211 @@ pub fn get_dashboard_summary(state: State<AppState>) -> Result<DashboardSummary>
     })
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExportData {
+    pub receipts: Vec<ReceiptWithItems>,
+    pub categories: Vec<Category>,
+    pub projects: Vec<Project>,
+    pub income_sources: Vec<IncomeSource>,
+    pub subscriptions: Vec<Subscription>,
+    pub savings_goals: Vec<SavingsGoal>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReceiptWithItems {
+    pub receipt: Receipt,
+    pub items: Vec<ReceiptItem>,
+}
+
 #[tauri::command]
 pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
-    Ok("TODO".into())
+    let conn = state.db.lock().unwrap();
+
+    // Get all categories
+    let categories: Vec<Category> = {
+        let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories")?;
+        let cats = stmt.query_map([], |row| {
+            Ok(Category {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                is_default: row.get(2)?,
+            })
+        })?;
+        cats.collect::<Result<Vec<_>>>()?
+    };
+
+    // Get all projects
+    let projects: Vec<Project> = {
+        let mut stmt = conn.prepare("SELECT id, name, total_budget FROM projects")?;
+        let projs = stmt.query_map([], |row| {
+            Ok(Project {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                total_budget: row.get(2)?,
+            })
+        })?;
+        projs.collect::<Result<Vec<_>>>()?
+    };
+
+    // Get all income sources
+    let income_sources: Vec<IncomeSource> = {
+        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_date FROM income_sources")?;
+        let sources = stmt.query_map([], |row| {
+            Ok(IncomeSource {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                amount: row.get(2)?,
+                frequency: row.get(3)?,
+                next_date: row.get(4)?,
+            })
+        })?;
+        sources.collect::<Result<Vec<_>>>()?
+    };
+
+    // Get all subscriptions
+    let subscriptions: Vec<Subscription> = {
+        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_expected_date, receipt_id FROM subscriptions")?;
+        let subs = stmt.query_map([], |row| {
+            Ok(Subscription {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                amount: row.get(2)?,
+                frequency: row.get(3)?,
+                next_expected_date: row.get(4)?,
+                receipt_id: row.get(5)?,
+            })
+        })?;
+        subs.collect::<Result<Vec<_>>>()?
+    };
+
+    // Get all savings goals
+    let savings_goals: Vec<SavingsGoal> = {
+        let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals")?;
+        let goals = stmt.query_map([], |row| {
+            Ok(SavingsGoal {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                target_amount: row.get(2)?,
+                monthly_allocation: row.get(3)?,
+                current_progress: row.get(4)?,
+            })
+        })?;
+        goals.collect::<Result<Vec<_>>>()?
+    };
+
+    // Get all receipts with items
+    let receipts: Vec<ReceiptWithItems> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at FROM receipts"
+        )?;
+        let receipts_iter = stmt.query_map([], |row| {
+            Ok(Receipt {
+                id: row.get(0)?,
+                image_path: row.get(1)?,
+                total: row.get(2)?,
+                tax: row.get(3)?,
+                discount: row.get(4)?,
+                category_id: row.get(5)?,
+                project_id: row.get(6)?,
+                is_recurring: row.get(7)?,
+                created_at: row.get(8)?,
+            })
+        })?;
+
+        let mut result = Vec::new();
+        for receipt in receipts_iter {
+            let receipt = receipt?;
+            let mut item_stmt = conn.prepare("SELECT id, receipt_id, name, qty, price FROM receipt_items WHERE receipt_id = ?1")?;
+            let items = item_stmt.query_map([receipt.id], |row| {
+                Ok(ReceiptItem {
+                    id: row.get(0)?,
+                    receipt_id: row.get(1)?,
+                    name: row.get(2)?,
+                    qty: row.get(3)?,
+                    price: row.get(4)?,
+                })
+            })?;
+            let items: Vec<ReceiptItem> = items.collect::<Result<Vec<_>>>()?;
+            result.push(ReceiptWithItems { receipt, items });
+        }
+        result
+    };
+
+    let export = ExportData {
+        receipts,
+        categories,
+        projects,
+        income_sources,
+        subscriptions,
+        savings_goals,
+    };
+
+    match format.to_lowercase().as_str() {
+        "json" => {
+            serde_json::to_string_pretty(&export).map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))
+        }
+        "csv" => {
+            // Export as CSV - flatten receipts for CSV format
+            let mut csv_output = String::new();
+            csv_output.push_str("Receipts\n");
+            csv_output.push_str("id,image_path,total,tax,discount,category_id,project_id,is_recurring,created_at,items\n");
+            for rwi in &export.receipts {
+                let items_str = rwi.items.iter().map(|i| format!("{}x{}@{}", i.name, i.qty, i.price)).collect::<Vec<_>>().join("; ");
+                csv_output.push_str(&format!(
+                    "{},{},{},{},{},{},{},{},{},{}\n",
+                    rwi.receipt.id,
+                    rwi.receipt.image_path,
+                    rwi.receipt.total,
+                    rwi.receipt.tax,
+                    rwi.receipt.discount,
+                    rwi.receipt.category_id.map_or(String::new(), |v| v.to_string()),
+                    rwi.receipt.project_id.map_or(String::new(), |v| v.to_string()),
+                    rwi.receipt.is_recurring,
+                    rwi.receipt.created_at,
+                    items_str
+                ));
+            }
+
+            csv_output.push_str("\nCategories\n");
+            csv_output.push_str("id,name,is_default\n");
+            for cat in &export.categories {
+                csv_output.push_str(&format!("{},{},{}\n", cat.id, cat.name, cat.is_default));
+            }
+
+            csv_output.push_str("\nProjects\n");
+            csv_output.push_str("id,name,total_budget\n");
+            for proj in &export.projects {
+                csv_output.push_str(&format!("{},{},{}\n", proj.id, proj.name, proj.total_budget));
+            }
+
+            csv_output.push_str("\nIncome Sources\n");
+            csv_output.push_str("id,name,amount,frequency,next_date\n");
+            for src in &export.income_sources {
+                csv_output.push_str(&format!("{},{},{},{},{}\n", src.id, src.name, src.amount, src.frequency, src.next_date));
+            }
+
+            csv_output.push_str("\nSubscriptions\n");
+            csv_output.push_str("id,name,amount,frequency,next_expected_date,receipt_id\n");
+            for sub in &export.subscriptions {
+                csv_output.push_str(&format!(
+                    "{},{},{},{},{},{}\n",
+                    sub.id,
+                    sub.name,
+                    sub.amount,
+                    sub.frequency,
+                    sub.next_expected_date,
+                    sub.receipt_id.map_or(String::new(), |v| v.to_string())
+                ));
+            }
+
+            csv_output.push_str("\nSavings Goals\n");
+            csv_output.push_str("id,name,target_amount,monthly_allocation,current_progress\n");
+            for goal in &export.savings_goals {
+                csv_output.push_str(&format!("{},{},{},{},{}\n", goal.id, goal.name, goal.target_amount, goal.monthly_allocation, goal.current_progress));
+            }
+
+            Ok(csv_output)
+        }
+        _ => Err(rusqlite::Error::InvalidParameterName("Unsupported format. Use 'json' or 'csv'.".into())),
+    }
 }
