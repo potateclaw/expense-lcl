@@ -22,7 +22,8 @@ jobs:
       - name: Setup Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "$HOME/.cargo/env" >> $GITHUB_ENV
+          source "$HOME/.cargo/env"
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_PATH
 
       - name: Install dependencies (Linux)
         if: matrix.platform == 'ubuntu-latest'
@@ -32,7 +33,9 @@ jobs:
 
       - name: Build Rust
         working-directory: src-tauri
-        run: cargo build --release
+        run: |
+          source "$HOME/.cargo/env"
+          cargo build --release
 
       - name: Upload artifact (Linux)
         if: matrix.platform == 'ubuntu-latest'
