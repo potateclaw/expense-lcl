@@ -906,3 +906,340 @@ body {
     font-size: 14px;
     margin-top: 8px;
 }
+
+/* Income Screen */
+.summary-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.summary-card .summary-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.income-value {
+    color: #22c55e;
+}
+
+.expense-value {
+    color: #f87171;
+}
+
+.savings-value {
+    color: #60a5fa;
+}
+
+.disposable-value {
+    color: #fbbf24;
+}
+
+.card-title {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.income-source-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    gap: 12px;
+}
+
+.income-source-item:last-child {
+    border-bottom: none;
+}
+
+.source-info {
+    flex: 1;
+}
+
+.source-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.source-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.source-amount {
+    font-weight: 600;
+    color: #22c55e;
+    font-size: 15px;
+}
+
+.source-details {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.source-monthly {
+    font-size: 12px;
+    color: #888;
+}
+
+.monthly-label {
+    margin-right: 4px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #888;
+    padding: 24px 0;
+    font-size: 14px;
+}
+
+/* Subscriptions Screen */
+.warnings-card {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+}
+
+.warning-title {
+    color: #92400e;
+}
+
+.warning-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.warning-item:last-child {
+    border-bottom: none;
+}
+
+.warning-icon {
+    font-size: 20px;
+}
+
+.warning-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.warning-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+}
+
+.warning-detail {
+    font-size: 12px;
+    color: #92400e;
+}
+
+.subscription-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    gap: 12px;
+}
+
+.subscription-item:last-child {
+    border-bottom: none;
+}
+
+.subscription-icon {
+    font-size: 24px;
+    width: 36px;
+    text-align: center;
+}
+
+.subscription-info {
+    flex: 1;
+}
+
+.subscription-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.subscription-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.subscription-amount {
+    font-weight: 600;
+    color: #ef4444;
+    font-size: 15px;
+}
+
+.subscription-details {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.subscription-frequency {
+    text-transform: capitalize;
+}
+
+.subscription-monthly {
+    color: #888;
+}
+
+.subscription-next {
+    font-size: 12px;
+    color: #666;
+}
+
+.next-label {
+    margin-right: 4px;
+}
+
+/* Savings Screen */
+.savings-value {
+    color: #22c55e;
+}
+
+.savings-goal-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.savings-goal-item:last-child {
+    border-bottom: none;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.goal-name {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.btn-delete-small {
+    background: #fee2e2;
+    border: none;
+    color: #ef4444;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-small:hover {
+    background: #fecaca;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.6;
+}
+
+.btn-delete:hover {
+    opacity: 1;
+}
+
+.goal-progress-section {
+    margin-bottom: 12px;
+}
+
+.goal-amounts {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.current-amount {
+    font-weight: 600;
+    font-size: 18px;
+    color: #22c55e;
+}
+
+.target-amount {
+    font-size: 14px;
+    color: #666;
+}
+
+.goal-percentage {
+    text-align: right;
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.goal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goal-allocation {
+    font-size: 13px;
+    color: #666;
+}
+
+.allocation-label {
+    margin-right: 4px;
+}
+
+.allocation-value {
+    font-weight: 500;
+    color: #333;
+}
+
+.current-progress-display,
+.new-progress-display {
+    font-size: 18px;
+    font-weight: 600;
+    color: #22c55e;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 8px;
+}
+
+.new-progress-display {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.form-hint {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}

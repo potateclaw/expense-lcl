@@ -256,6 +256,17 @@ pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64
 }
 
 #[tauri::command]
+pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress: f64) -> Result<SavingsGoal> {
+    Ok(SavingsGoal {
+        id,
+        name: String::new(),
+        target_amount: 0.0,
+        monthly_allocation: 0.0,
+        current_progress,
+    })
+}
+
+#[tauri::command]
 pub fn chat_query(state: State<AppState>, query: String) -> Result<String> {
     Ok("TODO".into())
 }
