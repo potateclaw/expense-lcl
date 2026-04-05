@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -11,7 +12,7 @@ pub struct ReceiptData {
     pub vendor: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReceiptItem {
     pub name: String,
     pub qty: f64,
@@ -24,4 +25,8 @@ pub fn save_receipt_image(image_data: &[u8], app_dir: &Path) -> Result<String, s
     std::fs::create_dir_all(path.parent().unwrap())?;
     std::fs::write(&path, image_data)?;
     Ok(path.to_string_lossy().to_string())
+}
+
+pub fn encode_image_base64(image_data: &[u8]) -> String {
+    BASE64.encode(image_data)
 }

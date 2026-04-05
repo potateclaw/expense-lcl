@@ -1,6 +1,11 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use rusqlite::{Connection, Result};
+use serde::{Deserialize, Serialize};
 use tauri::State;
 use std::sync::Mutex;
-use rusqlite::{Connection, Result};
+
+use crate::db::ReceiptItem as DbReceiptItem;
+use crate::receipt::{ReceiptData, ReceiptItem};
 
 pub struct AppState {
     pub db: Mutex<Connection>,
@@ -69,6 +74,18 @@ pub struct DashboardSummary {
     pub active_subscriptions: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddReceiptRequest {
+    pub image_path: String,
+    pub total: f64,
+    pub tax: f64,
+    pub discount: f64,
+    pub category_id: Option<i64>,
+    pub project_id: Option<i64>,
+    pub is_recurring: bool,
+    pub items: Vec<ReceiptItem>,
+}
+
 #[tauri::command]
 pub fn init_db(state: State<AppState>) -> Result<String> {
     Ok("Database initialized".into())
@@ -97,17 +114,49 @@ pub fn add_category(state: State<AppState>, name: String) -> Result<Category> {
 }
 
 #[tauri::command]
-pub fn add_receipt(state: State<AppState>, image_path: String, total: f64, tax: f64, discount: f64, category_id: Option<i64>, project_id: Option<i64>, is_recurring: bool) -> Result<Receipt> {
-    Ok(Receipt {
+pub fn add_receipt(state: State<AppState>, request: AddReceiptRequest) -> Result<Receipt> {
+    let conn = state.db.lock().unwrap();
+    let created_at = chrono::Utc::now().to_rfc3339();
+
+    let receipt = Receipt {
         id: 0,
-        image_path,
-        total,
-        tax,
-        discount,
-        category_id,
-        project_id,
-        is_recurring,
-        created_at: String::new(),
+        image_path: request.image_path,
+        total: request.total,
+        tax: request.tax,
+        discount: request.discount,
+        category_id: request.category_id,
+        project_id: request.project_id,
+        is_recurring: request.is_recurring,
+        created_at: created_at.clone(),
+    };
+
+    let tx = conn.unchecked_transaction()?;
+
+    let receipt_id = tx.add_receipt(&receipt)?;
+
+    for item in &request.items {
+        let db_item = DbReceiptItem {
+            id: 0,
+            receipt_id,
+            name: item.name.clone(),
+            qty: item.qty,
+            price: item.price,
+        };
+        tx.add_receipt_item(receipt_id, &db_item)?;
+    }
+
+    tx.commit()?;
+
+    Ok(Receipt {
+        id: receipt_id,
+        image_path: receipt.image_path,
+        total: receipt.total,
+        tax: receipt.tax,
+        discount: receipt.discount,
+        category_id: receipt.category_id,
+        project_id: receipt.project_id,
+        is_recurring: receipt.is_recurring,
+        created_at,
     })
 }
 
@@ -117,8 +166,31 @@ pub fn get_receipts(state: State<AppState>) -> Result<Vec<Receipt>> {
 }
 
 #[tauri::command]
-pub fn process_receipt_image(state: State<AppState>, image_path: String) -> Result<String> {
-    Ok("TODO".into())
+pub fn process_receipt_image(state: State<AppState>, image_data: Vec<u8>) -> Result<ReceiptData> {
+    // Get app directory for saving image
+    let app_dir = std::env::current_dir().unwrap();
+    let image_dir = app_dir.join("receipts");
+
+    // Save image and get path
+    let _image_path = receipt::save_receipt_image(&image_data, &image_dir)
+        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+
+    // Encode to base64 for LLM
+    let _image_base64 = receipt::encode_image_base64(&image_data);
+
+    // TODO: Call LLM to extract receipt data
+    // For now, return stub data that frontend can edit
+    let stub_data = ReceiptData {
+        total: 0.0,
+        tax: 0.0,
+        discount: 0.0,
+        items: vec![],
+        suggested_category: "Other".to_string(),
+        vendor: None,
+    };
+
+    // Store image path in state for later use when receipt is saved
+    Ok(stub_data)
 }
 
 #[tauri::command]
