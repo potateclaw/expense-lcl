@@ -4,6 +4,7 @@ use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReceiptData {
+    pub image_path: String,
     pub total: f64,
     pub tax: f64,
     pub discount: f64,

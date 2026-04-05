@@ -1,7 +1,7 @@
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State};
 use std::sync::Mutex;
 
 use crate::db::ReceiptItem as DbReceiptItem;
@@ -166,13 +166,12 @@ pub fn get_receipts(state: State<AppState>) -> Result<Vec<Receipt>> {
 }
 
 #[tauri::command]
-pub fn process_receipt_image(state: State<AppState>, image_data: Vec<u8>) -> Result<ReceiptData> {
-    // Get app directory for saving image
-    let app_dir = std::env::current_dir().unwrap();
-    let image_dir = app_dir.join("receipts");
+pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data: Vec<u8>) -> Result<ReceiptData> {
+    // Get app data directory for saving image using Tauri path API
+    let app_dir = app.path().app_data_dir().map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
     // Save image and get path
-    let _image_path = receipt::save_receipt_image(&image_data, &image_dir)
+    let image_path = receipt::save_receipt_image(&image_data, &app_dir)
         .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
     // Encode to base64 for LLM
@@ -181,6 +180,7 @@ pub fn process_receipt_image(state: State<AppState>, image_data: Vec<u8>) -> Res
     // TODO: Call LLM to extract receipt data
     // For now, return stub data that frontend can edit
     let stub_data = ReceiptData {
+        image_path,
         total: 0.0,
         tax: 0.0,
         discount: 0.0,
@@ -189,7 +189,6 @@ pub fn process_receipt_image(state: State<AppState>, image_data: Vec<u8>) -> Res
         vendor: None,
     };
 
-    // Store image path in state for later use when receipt is saved
     Ok(stub_data)
 }
 
