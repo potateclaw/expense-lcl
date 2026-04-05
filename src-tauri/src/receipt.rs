@@ -18,7 +18,7 @@ pub struct ReceiptItem {
     pub price: f64,
 }
 
-pub fn save_receipt_image(image_data: &[u8], app_dir: &Path) -> Result<String> {
+pub fn save_receipt_image(image_data: &[u8], app_dir: &Path) -> Result<String, std::io::Error> {
     let file_name = format!("receipt_{}.jpg", chrono::Utc::now().timestamp_millis());
     let path = app_dir.join("receipts").join(&file_name);
     std::fs::create_dir_all(path.parent().unwrap())?;

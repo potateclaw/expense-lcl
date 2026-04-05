@@ -48,7 +48,7 @@ function renderScreen(name) {
 async function completeOnboarding() {
     const currency = document.getElementById('currency').value;
     const country = document.getElementById('country').value;
-    await invoke('save_settings', { currency, country });
+    localStorage.setItem('settings', JSON.stringify({ currency, country }));
     renderScreen('dashboard');
 }
 
