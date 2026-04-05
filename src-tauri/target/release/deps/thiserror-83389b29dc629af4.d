@@ -1,0 +1,14 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/thiserror-83389b29dc629af4.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/build/thiserror-5c960b2e6b768eea/out/private.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libthiserror-83389b29dc629af4.rlib: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/build/thiserror-5c960b2e6b768eea/out/private.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libthiserror-83389b29dc629af4.rmeta: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/build/thiserror-5c960b2e6b768eea/out/private.rs
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs:
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/build/thiserror-5c960b2e6b768eea/out/private.rs:
+
+# env-dep:OUT_DIR=/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/build/thiserror-5c960b2e6b768eea/out

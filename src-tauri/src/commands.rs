@@ -1,32 +1,33 @@
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
 use std::sync::Mutex;
+use tauri::{AppHandle, State};
 
-use crate::db::ReceiptItem as DbReceiptItem;
+type CmdResult<T> = Result<T, String>;
+
+use crate::db::{DbConnection, ProjectCategory, ReceiptItem as DbReceiptItem};
 use crate::receipt::{ReceiptData, ReceiptItem};
 use crate::subscription::{detect_subscription_pattern, calculate_expected_cost};
 
 pub struct AppState {
-    pub db: Mutex<Connection>,
+    pub db: Mutex<DbConnection>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     pub id: i64,
     pub name: String,
     pub is_default: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub id: i64,
     pub name: String,
     pub total_budget: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Receipt {
     pub id: i64,
     pub image_path: String,
@@ -39,7 +40,7 @@ pub struct Receipt {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Subscription {
     pub id: i64,
     pub name: String,
@@ -49,7 +50,7 @@ pub struct Subscription {
     pub receipt_id: Option<i64>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IncomeSource {
     pub id: i64,
     pub name: String,
@@ -58,7 +59,7 @@ pub struct IncomeSource {
     pub next_date: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavingsGoal {
     pub id: i64,
     pub name: String,
@@ -85,7 +86,7 @@ pub struct SubscriptionDetection {
     pub is_subscription: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardSummary {
     pub total_expenses: f64,
     pub total_income: f64,
@@ -93,14 +94,14 @@ pub struct DashboardSummary {
     pub active_subscriptions: i64,
 }
 
-fn check_and_store_budget_alert(conn: &Connection, app: &AppHandle, category_id: i64, new_spent: f64) -> Vec<BudgetAlert> {
+fn check_and_store_budget_alert(conn: &DbConnection, app: &AppHandle, category_id: i64, new_spent: f64) -> Vec<BudgetAlert> {
     // Get category name
-    let category_name: String = conn
+    let category_name: String = conn.0
         .query_row("SELECT name FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
         .unwrap_or_else(|_| "Unknown".to_string());
 
     // Get category budget
-    let budget: f64 = conn
+    let budget: f64 = conn.0
         .query_row("SELECT COALESCE(budget, 0) FROM categories WHERE id = ?1", [category_id], |row| row.get(0))
         .unwrap_or(0.0);
 
@@ -121,7 +122,7 @@ fn check_and_store_budget_alert(conn: &Connection, app: &AppHandle, category_id:
             };
             triggered_alerts.push(alert.clone());
 
-            conn.execute(
+            conn.0.execute(
                 "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
                 rusqlite::params![category_id, 50.0],
             ).ok();
@@ -139,7 +140,7 @@ fn check_and_store_budget_alert(conn: &Connection, app: &AppHandle, category_id:
             };
             triggered_alerts.push(alert.clone());
 
-            conn.execute(
+            conn.0.execute(
                 "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
                 rusqlite::params![category_id, 80.0],
             ).ok();
@@ -193,52 +194,52 @@ pub struct AddReceiptRequest {
 }
 
 #[tauri::command]
-pub fn init_db(state: State<AppState>) -> Result<String> {
+pub fn init_db(state: State<AppState>) -> CmdResult<String> {
     Ok("Database initialized".into())
 }
 
 #[tauri::command]
-pub fn get_categories(state: State<AppState>) -> Result<Vec<Category>> {
+pub fn get_categories(state: State<AppState>) -> CmdResult<Vec<Category>> {
     let conn = state.db.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories")?;
+    let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories").map_err(|e| e.to_string())?;
     let cats = stmt.query_map([], |row| {
         Ok(Category {
             id: row.get(0)?,
             name: row.get(1)?,
             is_default: row.get(2)?,
         })
-    })?;
-    Ok(cats.collect::<Result<Vec<_>>>()?)
+    }).map_err(|e| e.to_string())?;
+    Ok(cats.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?)
 }
 
 #[tauri::command]
-pub fn add_category(state: State<AppState>, name: String) -> Result<Category> {
+pub fn add_category(state: State<AppState>, name: String) -> CmdResult<Category> {
     let conn = state.db.lock().unwrap();
-    conn.execute("INSERT INTO categories (name) VALUES (?1)", [&name])?;
+    conn.execute("INSERT INTO categories (name) VALUES (?1)", [&name]).map_err(|e| e.to_string())?;
     let id = conn.last_insert_rowid();
     Ok(Category { id, name, is_default: false })
 }
 
 #[tauri::command]
-pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRequest) -> Result<Receipt> {
+pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRequest) -> CmdResult<Receipt> {
     let category_id = request.category_id;
     let total = request.amount.abs();
 
     // Save the image first
     let app_dir = app.path().app_data_dir()
-        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+        .map_err(|e| e.to_string())?;
 
     let image_bytes = if request.image_data.starts_with("data:") {
         let base64_part = request.image_data.split(',').nth(1).unwrap_or(&request.image_data);
         BASE64.decode(base64_part)
-            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+            .map_err(|e| e.to_string())?
     } else {
         BASE64.decode(&request.image_data)
-            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+            .map_err(|e| e.to_string())?
     };
 
     let image_path = receipt::save_receipt_image(&image_bytes, &app_dir)
-        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+        .map_err(|e| e.to_string())?;
 
     let created_at = chrono::Utc::now().to_rfc3339();
 
@@ -256,7 +257,7 @@ pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRe
 
     let receipt_id = {
         let conn = state.db.lock().unwrap();
-        let id = conn.add_receipt(&receipt)?;
+        let id = conn.add_receipt(&receipt).map_err(|e| e.to_string())?;
 
         for item in &request.items {
             let db_item = DbReceiptItem {
@@ -266,7 +267,7 @@ pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRe
                 qty: item.qty,
                 price: item.price,
             };
-            conn.add_receipt_item(id, &db_item)?;
+            conn.add_receipt_item(id, &db_item).map_err(|e| e.to_string())?;
         }
         id
     };
@@ -291,30 +292,30 @@ pub fn add_receipt(state: State<AppState>, app: AppHandle, request: AddReceiptRe
 }
 
 #[tauri::command]
-pub fn get_receipts(state: State<AppState>) -> Result<Vec<Receipt>> {
+pub fn get_receipts(state: State<AppState>) -> CmdResult<Vec<Receipt>> {
     let conn = state.db.lock().unwrap();
-    conn.get_receipts(100)
+    conn.get_receipts(100).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data: String) -> Result<ReceiptData> {
+pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data: String) -> CmdResult<ReceiptData> {
     // Get app data directory for saving image using Tauri path API
-    let app_dir = app.path().app_data_dir().map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
 
     // Decode base64 image data (frontend sends data URL like "data:image/jpeg;base64,...")
     let image_bytes = if image_data.starts_with("data:") {
         // Extract base64 portion from data URL
         let base64_part = image_data.split(',').nth(1).unwrap_or(&image_data);
         BASE64.decode(base64_part)
-            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+            .map_err(|e| e.to_string())?
     } else {
         BASE64.decode(&image_data)
-            .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
+            .map_err(|e| e.to_string())?
     };
 
     // Save image and get path
     let image_path = receipt::save_receipt_image(&image_bytes, &app_dir)
-        .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+        .map_err(|e| e.to_string())?;
 
     // TODO: Call LLM to extract receipt data
     // For now, return stub data that frontend can edit
@@ -332,15 +333,15 @@ pub fn process_receipt_image(app: AppHandle, state: State<AppState>, image_data:
 }
 
 #[tauri::command]
-pub fn get_projects(state: State<AppState>) -> Result<Vec<Project>> {
+pub fn get_projects(state: State<AppState>) -> CmdResult<Vec<Project>> {
     let conn = state.db.lock().unwrap();
-    conn.get_projects()
+    conn.get_projects().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn create_project(state: State<AppState>, name: String, total_budget: f64) -> Result<Project> {
+pub fn create_project(state: State<AppState>, name: String, total_budget: f64) -> CmdResult<Project> {
     let conn = state.db.lock().unwrap();
-    let id = conn.create_project(&name, total_budget)?;
+    let id = conn.create_project(&name, total_budget).map_err(|e| e.to_string())?;
     Ok(Project {
         id,
         name,
@@ -349,13 +350,13 @@ pub fn create_project(state: State<AppState>, name: String, total_budget: f64) -
 }
 
 #[tauri::command]
-pub fn get_subscriptions(state: State<AppState>) -> Result<Vec<Subscription>> {
+pub fn get_subscriptions(state: State<AppState>) -> CmdResult<Vec<Subscription>> {
     let conn = state.db.lock().unwrap();
-    conn.get_subscriptions()
+    conn.get_subscriptions().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequency: String, next_expected_date: String) -> Result<Subscription> {
+pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequency: String, next_expected_date: String) -> CmdResult<Subscription> {
     let conn = state.db.lock().unwrap();
     let sub = Subscription {
         id: 0,
@@ -365,7 +366,7 @@ pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequ
         next_expected_date: next_expected_date.clone(),
         receipt_id: None,
     };
-    let id = conn.add_subscription(&sub)?;
+    let id = conn.add_subscription(&sub).map_err(|e| e.to_string())?;
     Ok(Subscription {
         id,
         name,
@@ -377,14 +378,14 @@ pub fn add_subscription(state: State<AppState>, name: String, amount: f64, frequ
 }
 
 #[tauri::command]
-pub fn process_receipt_with_subscription_check(state: State<AppState>, receipt_data: ReceiptData) -> Result<SubscriptionDetection> {
+pub fn process_receipt_with_subscription_check(state: State<AppState>, receipt_data: ReceiptData) -> CmdResult<SubscriptionDetection> {
     // Get recent receipts from database to detect patterns
     let conn = state.db.lock().unwrap();
     let recent_receipts: Vec<Receipt> = {
         let mut stmt = conn.prepare(
             "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at
              FROM receipts ORDER BY created_at DESC LIMIT 100"
-        )?;
+        ).map_err(|e| e.to_string())?;
         let receipts = stmt.query_map([], |row| {
             Ok(Receipt {
                 id: row.get(0)?,
@@ -397,8 +398,8 @@ pub fn process_receipt_with_subscription_check(state: State<AppState>, receipt_d
                 is_recurring: row.get(7)?,
                 created_at: row.get(8)?,
             })
-        })?;
-        receipts.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        receipts.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Convert to ReceiptData format for pattern detection
@@ -457,13 +458,13 @@ pub fn process_receipt_with_subscription_check(state: State<AppState>, receipt_d
 }
 
 #[tauri::command]
-pub fn get_expected_cost(state: State<AppState>, vendor: String) -> Result<f64> {
+pub fn get_expected_cost(state: State<AppState>, vendor: String) -> CmdResult<f64> {
     let conn = state.db.lock().unwrap();
     let recent_receipts: Vec<ReceiptData> = {
         let mut stmt = conn.prepare(
             "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at
              FROM receipts ORDER BY created_at DESC LIMIT 100"
-        )?;
+        ).map_err(|e| e.to_string())?;
         let receipts = stmt.query_map([], |row| {
             let id = row.get::<_, i64>(0)?;
             let items = conn.get_receipt_items(id).unwrap_or_default();
@@ -481,8 +482,8 @@ pub fn get_expected_cost(state: State<AppState>, vendor: String) -> Result<f64> 
                 suggested_category: String::new(),
                 vendor: vendor_name,
             })
-        })?;
-        receipts.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        receipts.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
     drop(conn);
 
@@ -490,13 +491,13 @@ pub fn get_expected_cost(state: State<AppState>, vendor: String) -> Result<f64> 
 }
 
 #[tauri::command]
-pub fn get_income_sources(state: State<AppState>) -> Result<Vec<IncomeSource>> {
+pub fn get_income_sources(state: State<AppState>) -> CmdResult<Vec<IncomeSource>> {
     let conn = state.db.lock().unwrap();
-    conn.get_income_sources()
+    conn.get_income_sources().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn add_income_source(state: State<AppState>, name: String, amount: f64, frequency: String, next_date: String) -> Result<IncomeSource> {
+pub fn add_income_source(state: State<AppState>, name: String, amount: f64, frequency: String, next_date: String) -> CmdResult<IncomeSource> {
     let conn = state.db.lock().unwrap();
     let source = IncomeSource {
         id: 0,
@@ -505,7 +506,7 @@ pub fn add_income_source(state: State<AppState>, name: String, amount: f64, freq
         frequency: frequency.clone(),
         next_date: next_date.clone(),
     };
-    let id = conn.add_income_source(&source)?;
+    let id = conn.add_income_source(&source).map_err(|e| e.to_string())?;
     Ok(IncomeSource {
         id,
         name,
@@ -516,13 +517,13 @@ pub fn add_income_source(state: State<AppState>, name: String, amount: f64, freq
 }
 
 #[tauri::command]
-pub fn get_savings_goals(state: State<AppState>) -> Result<Vec<SavingsGoal>> {
+pub fn get_savings_goals(state: State<AppState>) -> CmdResult<Vec<SavingsGoal>> {
     let conn = state.db.lock().unwrap();
-    conn.get_savings_goals()
+    conn.get_savings_goals().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64, monthly_allocation: f64) -> Result<SavingsGoal> {
+pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64, monthly_allocation: f64) -> CmdResult<SavingsGoal> {
     let conn = state.db.lock().unwrap();
     let goal = SavingsGoal {
         id: 0,
@@ -531,7 +532,7 @@ pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64
         monthly_allocation,
         current_progress: 0.0,
     };
-    let id = conn.add_savings_goal(&goal)?;
+    let id = conn.add_savings_goal(&goal).map_err(|e| e.to_string())?;
     Ok(SavingsGoal {
         id,
         name,
@@ -542,12 +543,12 @@ pub fn add_savings_goal(state: State<AppState>, name: String, target_amount: f64
 }
 
 #[tauri::command]
-pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress: f64) -> Result<SavingsGoal> {
+pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress: f64) -> CmdResult<SavingsGoal> {
     let conn = state.db.lock().unwrap();
-    conn.update_savings_progress(id, current_progress)?;
+    conn.update_savings_progress(id, current_progress).map_err(|e| e.to_string())?;
 
     // Fetch the updated goal
-    let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals WHERE id = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals WHERE id = ?1").map_err(|e| e.to_string())?;
     let goal = stmt.query_row([id], |row| {
         Ok(SavingsGoal {
             id: row.get(0)?,
@@ -556,7 +557,7 @@ pub fn update_savings_progress(state: State<AppState>, id: i64, current_progress
             monthly_allocation: row.get(3)?,
             current_progress: row.get(4)?,
         })
-    })?;
+    }).map_err(|e| e.to_string())?;
     Ok(goal)
 }
 
@@ -566,7 +567,7 @@ pub fn check_budget_alerts(
     app: AppHandle,
     category_id: i64,
     new_spent: f64,
-) -> Result<Vec<BudgetAlert>> {
+) -> CmdResult<Vec<BudgetAlert>> {
     let conn = state.db.lock().unwrap();
 
     // Get category name
@@ -663,14 +664,14 @@ pub fn check_budget_alerts(
 }
 
 #[tauri::command]
-pub fn get_active_alerts(state: State<AppState>) -> Result<Vec<BudgetAlert>> {
+pub fn get_active_alerts(state: State<AppState>) -> CmdResult<Vec<BudgetAlert>> {
     let conn = state.db.lock().unwrap();
 
     let mut stmt = conn.prepare(
         "SELECT c.id, c.name, COALESCE(c.budget, 0),
                 COALESCE((SELECT SUM(total) FROM receipts WHERE category_id = c.id AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')), 0) as spent
          FROM categories c"
-    )?;
+    ).map_err(|e| e.to_string())?;
 
     let alerts: Vec<BudgetAlert> = stmt.query_map([], |row| {
         let budget: f64 = row.get(2)?;
@@ -685,24 +686,24 @@ pub fn get_active_alerts(state: State<AppState>) -> Result<Vec<BudgetAlert>> {
             percentage,
             is_active: true,
         })
-    })?.filter_map(|r| r.ok()).collect();
+    }).map_err(|e| e.to_string())?.filter_map(|r| r.ok()).collect();
 
     // Filter to only show categories with spending >= 50%
     Ok(alerts.into_iter().filter(|a| a.percentage >= 50.0).collect())
 }
 
 #[tauri::command]
-pub fn dismiss_alert(state: State<AppState>, category_id: i64, threshold: f64) -> Result<()> {
+pub fn dismiss_alert(state: State<AppState>, category_id: i64, threshold: f64) -> CmdResult<()> {
     let conn = state.db.lock().unwrap();
     conn.execute(
         "DELETE FROM budget_alerts WHERE category_id = ?1 AND threshold = ?2",
         rusqlite::params![category_id, threshold],
-    )?;
+    ).map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn chat_query(state: State<AppState>, query: String) -> Result<String> {
+pub fn chat_query(state: State<AppState>, query: String) -> CmdResult<String> {
     // For now, return a helpful message since LLM requires model setup
     // In production, this would use the LLM with RAG context
     let response = format!(
@@ -715,9 +716,9 @@ pub fn chat_query(state: State<AppState>, query: String) -> Result<String> {
 }
 
 #[tauri::command]
-pub fn get_dashboard_summary(state: State<AppState>) -> Result<DashboardSummary> {
+pub fn get_dashboard_summary(state: State<AppState>) -> CmdResult<DashboardSummary> {
     let conn = state.db.lock().unwrap();
-    conn.get_dashboard_summary()
+    conn.get_dashboard_summary().map_err(|e| e.to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -737,38 +738,38 @@ pub struct ReceiptWithItems {
 }
 
 #[tauri::command]
-pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
+pub fn export_data(state: State<AppState>, format: String) -> CmdResult<String> {
     let conn = state.db.lock().unwrap();
 
     // Get all categories
     let categories: Vec<Category> = {
-        let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories")?;
+        let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories").map_err(|e| e.to_string())?;
         let cats = stmt.query_map([], |row| {
             Ok(Category {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 is_default: row.get(2)?,
             })
-        })?;
-        cats.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        cats.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Get all projects
     let projects: Vec<Project> = {
-        let mut stmt = conn.prepare("SELECT id, name, total_budget FROM projects")?;
+        let mut stmt = conn.prepare("SELECT id, name, total_budget FROM projects").map_err(|e| e.to_string())?;
         let projs = stmt.query_map([], |row| {
             Ok(Project {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 total_budget: row.get(2)?,
             })
-        })?;
-        projs.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        projs.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Get all income sources
     let income_sources: Vec<IncomeSource> = {
-        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_date FROM income_sources")?;
+        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_date FROM income_sources").map_err(|e| e.to_string())?;
         let sources = stmt.query_map([], |row| {
             Ok(IncomeSource {
                 id: row.get(0)?,
@@ -777,13 +778,13 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
                 frequency: row.get(3)?,
                 next_date: row.get(4)?,
             })
-        })?;
-        sources.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        sources.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Get all subscriptions
     let subscriptions: Vec<Subscription> = {
-        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_expected_date, receipt_id FROM subscriptions")?;
+        let mut stmt = conn.prepare("SELECT id, name, amount, frequency, next_expected_date, receipt_id FROM subscriptions").map_err(|e| e.to_string())?;
         let subs = stmt.query_map([], |row| {
             Ok(Subscription {
                 id: row.get(0)?,
@@ -793,13 +794,13 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
                 next_expected_date: row.get(4)?,
                 receipt_id: row.get(5)?,
             })
-        })?;
-        subs.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        subs.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Get all savings goals
     let savings_goals: Vec<SavingsGoal> = {
-        let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals")?;
+        let mut stmt = conn.prepare("SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals").map_err(|e| e.to_string())?;
         let goals = stmt.query_map([], |row| {
             Ok(SavingsGoal {
                 id: row.get(0)?,
@@ -808,15 +809,15 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
                 monthly_allocation: row.get(3)?,
                 current_progress: row.get(4)?,
             })
-        })?;
-        goals.collect::<Result<Vec<_>>>()?
+        }).map_err(|e| e.to_string())?;
+        goals.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?
     };
 
     // Get all receipts with items
     let receipts: Vec<ReceiptWithItems> = {
         let mut stmt = conn.prepare(
             "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at FROM receipts"
-        )?;
+        ).map_err(|e| e.to_string())?;
         let receipts_iter = stmt.query_map([], |row| {
             Ok(Receipt {
                 id: row.get(0)?,
@@ -829,12 +830,12 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
                 is_recurring: row.get(7)?,
                 created_at: row.get(8)?,
             })
-        })?;
+        }).map_err(|e| e.to_string())?;
 
         let mut result = Vec::new();
         for receipt in receipts_iter {
             let receipt = receipt?;
-            let mut item_stmt = conn.prepare("SELECT id, receipt_id, name, qty, price FROM receipt_items WHERE receipt_id = ?1")?;
+            let mut item_stmt = conn.prepare("SELECT id, receipt_id, name, qty, price FROM receipt_items WHERE receipt_id = ?1").map_err(|e| e.to_string())?;
             let items = item_stmt.query_map([receipt.id], |row| {
                 Ok(ReceiptItem {
                     id: row.get(0)?,
@@ -843,8 +844,8 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
                     qty: row.get(3)?,
                     price: row.get(4)?,
                 })
-            })?;
-            let items: Vec<ReceiptItem> = items.collect::<Result<Vec<_>>>()?;
+            }).map_err(|e| e.to_string())?;
+            let items: Vec<ReceiptItem> = items.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?;
             result.push(ReceiptWithItems { receipt, items });
         }
         result
@@ -861,7 +862,7 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
 
     match format.to_lowercase().as_str() {
         "json" => {
-            serde_json::to_string_pretty(&export).map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))
+            serde_json::to_string_pretty(&export).map_err(|e| e.to_string())
         }
         "csv" => {
             // Export as CSV - flatten receipts for CSV format
@@ -925,7 +926,7 @@ pub fn export_data(state: State<AppState>, format: String) -> Result<String> {
 
             Ok(csv_output)
         }
-        _ => Err(rusqlite::Error::InvalidParameterName("Unsupported format. Use 'json' or 'csv'.".into())),
+        _ => Err("Unsupported format. Use 'json' or 'csv'.".into()),
     }
 }
 
@@ -945,7 +946,7 @@ pub fn add_transaction(
     amount: f64,
     category_id: Option<i64>,
     note: Option<String>,
-) -> Result<Transaction> {
+) -> CmdResult<Transaction> {
     let conn = state.db.lock().unwrap();
     let created_at = chrono::Utc::now().to_rfc3339();
 
@@ -963,7 +964,7 @@ pub fn add_transaction(
         created_at: created_at.clone(),
     };
 
-    let receipt_id = conn.add_receipt(&receipt)?;
+    let receipt_id = conn.add_receipt(&receipt).map_err(|e| e.to_string())?;
 
     Ok(Transaction {
         id: receipt_id,
@@ -976,9 +977,9 @@ pub fn add_transaction(
 }
 
 #[tauri::command]
-pub fn get_transactions(state: State<AppState>, limit: i32) -> Result<Vec<Transaction>> {
+pub fn get_transactions(state: State<AppState>, limit: i32) -> CmdResult<Vec<Transaction>> {
     let conn = state.db.lock().unwrap();
-    let receipts = conn.get_receipts(limit)?;
+    let receipts = conn.get_receipts(limit).map_err(|e| e.to_string())?;
 
     let transactions: Vec<Transaction> = receipts
         .into_iter()
@@ -1009,26 +1010,26 @@ pub fn get_transactions(state: State<AppState>, limit: i32) -> Result<Vec<Transa
 }
 
 #[tauri::command]
-pub fn save_categories(state: State<AppState>, categories: Vec<CategorySave>) -> Result<Vec<Category>> {
+pub fn save_categories(state: State<AppState>, categories: Vec<CategorySave>) -> CmdResult<Vec<Category>> {
     let conn = state.db.lock().unwrap();
 
     for cat in categories {
         conn.execute(
             "INSERT OR IGNORE INTO categories (name, is_default) VALUES (?1, 0)",
             [&cat.name],
-        )?;
+        ).map_err(|e| e.to_string())?;
     }
 
     // Return all categories
-    let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories")?;
+    let mut stmt = conn.prepare("SELECT id, name, is_default FROM categories").map_err(|e| e.to_string())?;
     let cats = stmt.query_map([], |row| {
         Ok(Category {
             id: row.get(0)?,
             name: row.get(1)?,
             is_default: row.get(2)?,
         })
-    })?;
-    Ok(cats.collect::<Result<Vec<_>>>()?)
+    }).map_err(|e| e.to_string())?;
+    Ok(cats.collect::<Result<Vec<_>>>().map_err(|e| e.to_string())?)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1039,24 +1040,24 @@ pub struct CategorySave {
 }
 
 #[tauri::command]
-pub fn add_project_category(state: State<AppState>, project_id: i64, name: String) -> Result<i64> {
+pub fn add_project_category(state: State<AppState>, project_id: i64, name: String) -> CmdResult<i64> {
     let conn = state.db.lock().unwrap();
-    conn.add_project_category(project_id, &name)
+    conn.add_project_category(project_id, &name).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_project_categories(state: State<AppState>, project_id: i64) -> Result<Vec<ProjectCategory>> {
+pub fn get_project_categories(state: State<AppState>, project_id: i64) -> CmdResult<Vec<ProjectCategory>> {
     let conn = state.db.lock().unwrap();
-    conn.get_project_categories(project_id)
+    conn.get_project_categories(project_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn update_project(state: State<AppState>, id: i64, name: String, budget: f64) -> Result<Project> {
+pub fn update_project(state: State<AppState>, id: i64, name: String, budget: f64) -> CmdResult<Project> {
     let conn = state.db.lock().unwrap();
     conn.execute(
         "UPDATE projects SET name = ?1, total_budget = ?2 WHERE id = ?3",
         rusqlite::params![name, budget, id],
-    )?;
+    ).map_err(|e| e.to_string())?;
     Ok(Project {
         id,
         name,
@@ -1065,8 +1066,8 @@ pub fn update_project(state: State<AppState>, id: i64, name: String, budget: f64
 }
 
 #[tauri::command]
-pub fn delete_project(state: State<AppState>, id: i64) -> Result<()> {
+pub fn delete_project(state: State<AppState>, id: i64) -> CmdResult<()> {
     let conn = state.db.lock().unwrap();
-    conn.execute("DELETE FROM projects WHERE id = ?1", [id])?;
+    conn.execute("DELETE FROM projects WHERE id = ?1", [id]).map_err(|e| e.to_string())?;
     Ok(())
 }

@@ -1,0 +1,10 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/time_core-42cd27f825f710c2.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libtime_core-42cd27f825f710c2.rlib: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libtime_core-42cd27f825f710c2.rmeta: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/convert.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/hint.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-core-0.1.8/src/util.rs:

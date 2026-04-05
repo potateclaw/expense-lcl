@@ -1,0 +1,11 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/v_frame-df51ac9e7da7f633.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/frame.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/math.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/pixel.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/plane.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libv_frame-df51ac9e7da7f633.rlib: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/frame.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/math.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/pixel.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/plane.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libv_frame-df51ac9e7da7f633.rmeta: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/frame.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/math.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/pixel.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/plane.rs
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/frame.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/math.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/pixel.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/v_frame-0.3.9/src/plane.rs:

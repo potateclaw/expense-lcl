@@ -25,7 +25,10 @@ pub struct BudgetAlert {
     pub threshold: f64,
 }
 
-pub fn init_db(db_path: &Path) -> Result<Connection> {
+// Newtype wrapper to allow implementing methods on Connection
+pub struct DbConnection(pub Connection);
+
+pub fn init_db(db_path: &Path) -> Result<DbConnection> {
     let conn = Connection::open(db_path)?;
 
     conn.execute(
@@ -148,16 +151,16 @@ pub fn init_db(db_path: &Path) -> Result<Connection> {
         )?;
     }
 
-    Ok(conn)
+    Ok(DbConnection(conn))
 }
 
 // Imports for CRUD implementations
 use crate::commands::{Project, Receipt, Subscription, IncomeSource, SavingsGoal, DashboardSummary};
 
-impl Connection {
+impl DbConnection {
     // Projects
     pub fn get_projects(&self) -> Result<Vec<Project>> {
-        let mut stmt = self.prepare("SELECT id, name, total_budget FROM projects")?;
+        let mut stmt = self.0.prepare("SELECT id, name, total_budget FROM projects")?;
         let projects = stmt.query_map([], |row| {
             Ok(Project {
                 id: row.get(0)?,
@@ -169,15 +172,15 @@ impl Connection {
     }
 
     pub fn create_project(&self, name: &str, budget: f64) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO projects (name, total_budget) VALUES (?1, ?2)",
             [name, &budget.to_string()],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     pub fn get_project_categories(&self, project_id: i64) -> Result<Vec<ProjectCategory>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, project_id, name FROM project_categories WHERE project_id = ?1",
         )?;
         let cats = stmt.query_map([project_id], |row| {
@@ -191,16 +194,16 @@ impl Connection {
     }
 
     pub fn add_project_category(&self, project_id: i64, name: &str) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO project_categories (project_id, name) VALUES (?1, ?2)",
-            [project_id.to_string(), name],
+            [project_id.to_string(), name.to_string()],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     // Receipts
     pub fn get_receipts(&self, limit: i32) -> Result<Vec<Receipt>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, image_path, total, tax, discount, category_id, project_id, is_recurring, created_at
              FROM receipts ORDER BY created_at DESC LIMIT ?1",
         )?;
@@ -221,7 +224,7 @@ impl Connection {
     }
 
     pub fn add_receipt(&self, receipt: &Receipt) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO receipts (image_path, total, tax, discount, category_id, project_id, is_recurring, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             rusqlite::params![
@@ -235,11 +238,11 @@ impl Connection {
                 &receipt.created_at,
             ],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     pub fn get_receipt_items(&self, receipt_id: i64) -> Result<Vec<ReceiptItem>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, receipt_id, name, qty, price FROM receipt_items WHERE receipt_id = ?1",
         )?;
         let items = stmt.query_map([receipt_id], |row| {
@@ -255,21 +258,21 @@ impl Connection {
     }
 
     pub fn add_receipt_item(&self, receipt_id: i64, item: &ReceiptItem) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO receipt_items (receipt_id, name, qty, price) VALUES (?1, ?2, ?3, ?4)",
             [
                 receipt_id.to_string(),
-                &item.name,
-                &item.qty.to_string(),
-                &item.price.to_string(),
+                item.name.clone(),
+                item.qty.to_string(),
+                item.price.to_string(),
             ],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     // Subscriptions
     pub fn get_subscriptions(&self) -> Result<Vec<Subscription>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, name, amount, frequency, next_expected_date, receipt_id FROM subscriptions",
         )?;
         let subs = stmt.query_map([], |row| {
@@ -286,7 +289,7 @@ impl Connection {
     }
 
     pub fn add_subscription(&self, sub: &Subscription) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO subscriptions (name, amount, frequency, next_expected_date, receipt_id)
              VALUES (?1, ?2, ?3, ?4, ?5)",
             rusqlite::params![
@@ -297,12 +300,12 @@ impl Connection {
                 sub.receipt_id,
             ],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     // Income Sources
     pub fn get_income_sources(&self) -> Result<Vec<IncomeSource>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, name, amount, frequency, next_date FROM income_sources",
         )?;
         let sources = stmt.query_map([], |row| {
@@ -318,7 +321,7 @@ impl Connection {
     }
 
     pub fn add_income_source(&self, source: &IncomeSource) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO income_sources (name, amount, frequency, next_date) VALUES (?1, ?2, ?3, ?4)",
             [
                 &source.name,
@@ -327,12 +330,12 @@ impl Connection {
                 &source.next_date,
             ],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     // Savings Goals
     pub fn get_savings_goals(&self) -> Result<Vec<SavingsGoal>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, name, target_amount, monthly_allocation, current_progress FROM savings_goals",
         )?;
         let goals = stmt.query_map([], |row| {
@@ -348,7 +351,7 @@ impl Connection {
     }
 
     pub fn add_savings_goal(&self, goal: &SavingsGoal) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT INTO savings_goals (name, target_amount, monthly_allocation, current_progress)
              VALUES (?1, ?2, ?3, ?4)",
             [
@@ -358,11 +361,11 @@ impl Connection {
                 &goal.current_progress.to_string(),
             ],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 
     pub fn update_savings_progress(&self, goal_id: i64, amount: f64) -> Result<()> {
-        self.execute(
+        self.0.execute(
             "UPDATE savings_goals SET current_progress = current_progress + ?1 WHERE id = ?2",
             [amount.to_string(), goal_id.to_string()],
         )?;
@@ -372,6 +375,7 @@ impl Connection {
     // Dashboard Summary
     pub fn get_dashboard_summary(&self) -> Result<DashboardSummary> {
         let total_expenses: f64 = self
+            .0
             .query_row("SELECT COALESCE(SUM(total - tax + discount), 0) FROM receipts", [], |row| row.get(0))
             .unwrap_or_else(|e| {
                 eprintln!("Warning: failed to calculate total expenses: {}", e);
@@ -379,6 +383,7 @@ impl Connection {
             });
 
         let total_income: f64 = self
+            .0
             .query_row("SELECT COALESCE(SUM(amount), 0) FROM income_sources", [], |row| row.get(0))
             .unwrap_or_else(|e| {
                 eprintln!("Warning: failed to calculate total income: {}", e);
@@ -386,6 +391,7 @@ impl Connection {
             });
 
         let savings_progress: f64 = self
+            .0
             .query_row(
                 "SELECT COALESCE(SUM(current_progress / target_amount * 100), 0) FROM savings_goals WHERE target_amount > 0",
                 [],
@@ -397,6 +403,7 @@ impl Connection {
             });
 
         let active_subscriptions: i64 = self
+            .0
             .query_row("SELECT COUNT(*) FROM subscriptions", [], |row| row.get(0))
             .unwrap_or_else(|e| {
                 eprintln!("Warning: failed to count active subscriptions: {}", e);
@@ -413,7 +420,7 @@ impl Connection {
 
     // Budget Alerts
     pub fn get_budget_alerts(&self, category_id: i64) -> Result<Vec<BudgetAlert>> {
-        let mut stmt = self.prepare(
+        let mut stmt = self.0.prepare(
             "SELECT id, category_id, threshold FROM budget_alerts WHERE category_id = ?1",
         )?;
         let alerts = stmt.query_map([category_id], |row| {
@@ -427,10 +434,10 @@ impl Connection {
     }
 
     pub fn set_budget_alert(&self, category_id: i64, threshold: f64) -> Result<i64> {
-        self.execute(
+        self.0.execute(
             "INSERT OR REPLACE INTO budget_alerts (category_id, threshold) VALUES (?1, ?2)",
             [category_id.to_string(), threshold.to_string()],
         )?;
-        Ok(self.last_insert_rowid())
+        Ok(self.0.last_insert_rowid())
     }
 }

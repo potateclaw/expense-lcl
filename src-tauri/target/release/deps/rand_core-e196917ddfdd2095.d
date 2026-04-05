@@ -1,0 +1,11 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/rand_core-e196917ddfdd2095.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/block.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/impls.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/le.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/os.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/librand_core-e196917ddfdd2095.rlib: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/block.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/impls.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/le.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/os.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/librand_core-e196917ddfdd2095.rmeta: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/block.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/impls.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/le.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/os.rs
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/block.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/impls.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/le.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_core-0.9.5/src/os.rs:

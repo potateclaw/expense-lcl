@@ -1,0 +1,10 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/zbus_macros-d3a63ba9dfdd5f64.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/error.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/iface.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/proxy.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/utils.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/../README.md
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libzbus_macros-d3a63ba9dfdd5f64.so: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/error.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/iface.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/proxy.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/utils.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/../README.md
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/error.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/iface.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/proxy.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/utils.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zbus_macros-5.14.0/src/../README.md:

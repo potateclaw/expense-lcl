@@ -1,0 +1,10 @@
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/avif_serialize-62e8765cb077e04e.d: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/boxes.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/constants.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/writer.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libavif_serialize-62e8765cb077e04e.rlib: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/boxes.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/constants.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/writer.rs
+
+/home/clawbster/.openclaw/workspace/expense-lcl/src-tauri/target/release/deps/libavif_serialize-62e8765cb077e04e.rmeta: /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/lib.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/boxes.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/constants.rs /home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/writer.rs
+
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/lib.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/boxes.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/constants.rs:
+/home/clawbster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/avif-serialize-0.8.8/src/writer.rs:
