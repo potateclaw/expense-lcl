@@ -41,7 +41,7 @@ async function loadDashboard() {
                 <div id="recent-transactions-list"></div>
             </div>
         </div>
-        <button class="fab" id="quick-add-fab" onclick="showQuickAdd()">
+        <button class="fab" id="quick-add-fab" onclick="captureReceipt()">
             <span>+</span>
         </button>
         <nav class="bottom-nav" id="bottom-nav">
