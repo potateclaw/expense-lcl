@@ -1,6 +1,14 @@
 // projects.js - Project management
 const { invoke } = window.__TAURI__.core;
 
+// Escape HTML to prevent XSS attacks
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
 let currentProjectId = null;
 let projectsData = [];
 
@@ -75,7 +83,7 @@ function renderProjectsList() {
         return `
             <div class="card project-card" onclick="loadProjectDetail(${project.id})">
                 <div class="project-header">
-                    <h3 class="project-name">${project.name}</h3>
+                    <h3 class="project-name">${escapeHtml(project.name)}</h3>
                     <span class="project-budget">${symbol}${budget.toFixed(2)}</span>
                 </div>
                 <div class="progress-bar-container">
@@ -147,7 +155,7 @@ function renderProjectDetail() {
 
     content.innerHTML = `
         <div class="card project-overview-card">
-            <h2 class="project-title">${project.name}</h2>
+            <h2 class="project-title">${escapeHtml(project.name)}</h2>
             <div class="project-budget-detail">
                 <span class="budget-label">Total Budget</span>
                 <span class="budget-value">${symbol}${budget.toFixed(2)}</span>
@@ -201,7 +209,7 @@ function renderCategoriesList() {
         return `
             <div class="category-breakdown-item">
                 <div class="category-info">
-                    <span class="category-name">${cat.name}</span>
+                    <span class="category-name">${escapeHtml(cat.name)}</span>
                     <span class="category-spent">${symbol}${catSpent.toFixed(2)}</span>
                 </div>
                 <div class="progress-bar-container small">
@@ -343,7 +351,7 @@ async function submitCreateProject() {
     try {
         const projectId = await invoke('create_project', {
             name,
-            budget,
+            budget: Math.abs(budget),
             categories
         });
 
@@ -491,7 +499,7 @@ function showEditProjectModal() {
             <div class="modal-body">
                 <div class="form-group">
                     <label>Project Name</label>
-                    <input type="text" id="edit-project-name" value="${project.name}">
+                    <input type="text" id="edit-project-name" value="${escapeHtml(project.name)}">
                 </div>
                 <div class="form-group">
                     <label>Total Budget</label>
@@ -527,7 +535,7 @@ async function submitEditProject() {
         await invoke('update_project', {
             id: currentProjectId,
             name,
-            budget
+            budget: Math.abs(budget)
         });
 
         document.querySelector('.modal-overlay')?.remove();
@@ -552,7 +560,7 @@ function confirmDeleteProject() {
                 <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete "<strong>${project.name}</strong>"?</p>
+                <p>Are you sure you want to delete "<strong>${escapeHtml(project.name)}</strong>"?</p>
                 <p class="warning-text">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
