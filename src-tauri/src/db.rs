@@ -224,14 +224,14 @@ impl Connection {
         self.execute(
             "INSERT INTO receipts (image_path, total, tax, discount, category_id, project_id, is_recurring, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            [
+            rusqlite::params![
                 &receipt.image_path,
-                &receipt.total.to_string(),
-                &receipt.tax.to_string(),
-                &receipt.discount.to_string(),
-                &receipt.category_id.map(|id| id.to_string()).unwrap_or_default(),
-                &receipt.project_id.map(|id| id.to_string()).unwrap_or_default(),
-                &(if receipt.is_recurring { 1 } else { 0 }).to_string(),
+                receipt.total,
+                receipt.tax,
+                receipt.discount,
+                receipt.category_id,
+                receipt.project_id,
+                receipt.is_recurring as i32,
                 &receipt.created_at,
             ],
         )?;
@@ -289,12 +289,12 @@ impl Connection {
         self.execute(
             "INSERT INTO subscriptions (name, amount, frequency, next_expected_date, receipt_id)
              VALUES (?1, ?2, ?3, ?4, ?5)",
-            [
+            rusqlite::params![
                 &sub.name,
-                &sub.amount.to_string(),
+                sub.amount,
                 &sub.frequency,
                 &sub.next_expected_date,
-                &sub.receipt_id.map(|id| id.to_string()).unwrap_or_default(),
+                sub.receipt_id,
             ],
         )?;
         Ok(self.last_insert_rowid())
@@ -373,11 +373,17 @@ impl Connection {
     pub fn get_dashboard_summary(&self) -> Result<DashboardSummary> {
         let total_expenses: f64 = self
             .query_row("SELECT COALESCE(SUM(total - tax + discount), 0) FROM receipts", [], |row| row.get(0))
-            .unwrap_or(0.0);
+            .unwrap_or_else(|e| {
+                eprintln!("Warning: failed to calculate total expenses: {}", e);
+                0.0
+            });
 
         let total_income: f64 = self
             .query_row("SELECT COALESCE(SUM(amount), 0) FROM income_sources", [], |row| row.get(0))
-            .unwrap_or(0.0);
+            .unwrap_or_else(|e| {
+                eprintln!("Warning: failed to calculate total income: {}", e);
+                0.0
+            });
 
         let savings_progress: f64 = self
             .query_row(
@@ -385,11 +391,17 @@ impl Connection {
                 [],
                 |row| row.get(0),
             )
-            .unwrap_or(0.0);
+            .unwrap_or_else(|e| {
+                eprintln!("Warning: failed to calculate savings progress: {}", e);
+                0.0
+            });
 
         let active_subscriptions: i64 = self
             .query_row("SELECT COUNT(*) FROM subscriptions", [], |row| row.get(0))
-            .unwrap_or(0);
+            .unwrap_or_else(|e| {
+                eprintln!("Warning: failed to count active subscriptions: {}", e);
+                0
+            });
 
         Ok(DashboardSummary {
             total_expenses,
