@@ -1,5 +1,11 @@
 const { invoke } = window.__TAURI__.core;
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let incomeData = {
     sources: [],
     totalMonthly: 0,
@@ -135,7 +141,7 @@ function renderIncomeScreen() {
             <div class="income-source-item" data-id="${source.id}">
                 <div class="source-info">
                     <div class="source-header">
-                        <span class="source-name">${source.name}</span>
+                        <span class="source-name">${escapeHtml(source.name)}</span>
                         <span class="source-amount">${symbol}${source.amount.toFixed(2)}</span>
                     </div>
                     <div class="source-details">

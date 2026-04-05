@@ -1,5 +1,11 @@
 const { invoke } = window.__TAURI__.core;
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let savingsData = {
     goals: [],
     totalSaved: 0,
@@ -96,7 +102,7 @@ function renderSavingsScreen() {
         return `
             <div class="savings-goal-item" data-id="${goal.id}">
                 <div class="goal-header">
-                    <span class="goal-name">${goal.name}</span>
+                    <span class="goal-name">${escapeHtml(goal.name)}</span>
                     <button class="btn-delete-small" onclick="deleteGoal(${goal.id})" title="Delete">×</button>
                 </div>
                 <div class="goal-progress-section">

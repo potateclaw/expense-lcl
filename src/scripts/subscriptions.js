@@ -1,5 +1,11 @@
 const { invoke } = window.__TAURI__.core;
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let subscriptionsData = {
     subscriptions: [],
     upcomingWarnings: []
@@ -111,7 +117,7 @@ function renderSubscriptionsScreen() {
                 <div class="warning-item">
                     <span class="warning-icon">⚠️</span>
                     <div class="warning-info">
-                        <span class="warning-name">${sub.name}</span>
+                        <span class="warning-name">${escapeHtml(sub.name)}</span>
                         <span class="warning-detail">${warningText} - ${symbol}${sub.amount.toFixed(2)}</span>
                     </div>
                 </div>
@@ -138,7 +144,7 @@ function renderSubscriptionsScreen() {
                 <div class="subscription-icon">🔄</div>
                 <div class="subscription-info">
                     <div class="subscription-header">
-                        <span class="subscription-name">${sub.name}</span>
+                        <span class="subscription-name">${escapeHtml(sub.name)}</span>
                         <span class="subscription-amount">${symbol}${sub.amount.toFixed(2)}</span>
                     </div>
                     <div class="subscription-details">
