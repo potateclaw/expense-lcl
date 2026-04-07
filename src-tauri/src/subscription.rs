@@ -1,5 +1,5 @@
-use chrono::{NaiveDate, Duration};
 use crate::receipt::ReceiptData;
+use chrono::{Duration, NaiveDate};
 use std::collections::HashMap;
 
 pub fn predict_next_date(last_date: NaiveDate, frequency: &str) -> NaiveDate {
@@ -20,7 +20,10 @@ pub fn detect_subscription_pattern(receipts: &[ReceiptData]) -> Option<(String, 
     let mut vendor_receipts: HashMap<String, Vec<&ReceiptData>> = HashMap::new();
     for receipt in receipts {
         if let Some(ref vendor) = receipt.vendor {
-            vendor_receipts.entry(vendor.clone()).or_default().push(receipt);
+            vendor_receipts
+                .entry(vendor.clone())
+                .or_default()
+                .push(receipt);
         }
     }
 

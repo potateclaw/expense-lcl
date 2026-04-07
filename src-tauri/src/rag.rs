@@ -20,8 +20,8 @@ pub struct RagRetriever {
 
 impl RagRetriever {
     pub fn load_from_file(path: &str) -> Result<Self, String> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read tips file: {}", e))?;
+        let content =
+            fs::read_to_string(path).map_err(|e| format!("Failed to read tips file: {}", e))?;
 
         let db: TipsDatabase = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse tips JSON: {}", e))?;
@@ -33,7 +33,9 @@ impl RagRetriever {
         let query_lower = query.to_lowercase();
         let query_words: Vec<&str> = query_lower.split_whitespace().collect();
 
-        let mut scored: Vec<(&&FinancialTip, usize)> = self.tips.iter()
+        let mut scored: Vec<(&FinancialTip, usize)> = self
+            .tips
+            .iter()
             .map(|tip| {
                 let score = self.calculate_relevance(tip, &query_words);
                 (tip, score)
@@ -42,10 +44,7 @@ impl RagRetriever {
 
         scored.sort_by(|a, b| b.1.cmp(&a.1));
 
-        scored.into_iter()
-            .take(top_k)
-            .map(|(tip, _)| tip)
-            .collect()
+        scored.into_iter().take(top_k).map(|(tip, _)| tip).collect()
     }
 
     fn calculate_relevance(&self, tip: &FinancialTip, query_words: &[&str]) -> usize {
@@ -70,8 +69,7 @@ impl RagRetriever {
             }
         }
 
-        let exact_category_match = query_words.iter()
-            .any(|word| category_lower == *word);
+        let exact_category_match = query_words.iter().any(|word| category_lower == *word);
         if exact_category_match {
             score += 15;
         }

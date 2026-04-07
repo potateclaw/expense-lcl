@@ -5,7 +5,6 @@
   "identifier": "com.budgy.app",
   "build": {
     "frontendDist": "../src",
-    "devUrl": "http://localhost:1420",
     "beforeDevCommand": "",
     "beforeBuildCommand": ""
   },
@@ -14,11 +13,19 @@
     "windows": [
       {
         "title": "Budgy",
+        "url": "index.html",
         "width": 390,
         "height": 844,
         "resizable": true,
         "fullscreen": false
       }
     ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "android": {
+      "minSdkVersion": 26
+    }
   }
 }

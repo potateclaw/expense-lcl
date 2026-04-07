@@ -1,0 +1,326 @@
+/* Camera & Receipt Review Styles */
+
+/* Camera Preview Screen */
+.camera-preview-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #1a1a1a;
+    color: white;
+}
+
+.camera-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.camera-preview-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.camera-preview-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.preview-image-container {
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.preview-image-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.camera-preview-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Processing Screen */
+.processing-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
+.processing-content {
+    text-align: center;
+    padding: 32px;
+}
+
+.processing-content h2 {
+    margin: 24px 0 8px;
+    font-size: 22px;
+    color: #333;
+}
+
+.processing-content p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Spinner */
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e0e0e0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Receipt Review Screen */
+.receipt-review-screen {
+    padding-bottom: 24px;
+}
+
+.receipt-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.receipt-review-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.receipt-image-container {
+    padding: 16px;
+    background: #f5f5f5;
+}
+
+.receipt-image-container img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.receipt-form {
+    padding: 20px;
+}
+
+.receipt-form h3 {
+    font-size: 18px;
+    margin: 0 0 4px;
+}
+
+.form-hint {
+    color: #888;
+    font-size: 13px;
+    margin: 0 0 16px;
+}
+
+.receipt-form .form-group {
+    margin-bottom: 16px;
+}
+
+.receipt-form .form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
+    font-size: 14px;
+}
+
+.receipt-form .form-group input,
+.receipt-form .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+}
+
+.receipt-form .form-group input:focus,
+.receipt-form .form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Line Items Section */
+.line-items-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.line-items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.line-items-header h4 {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.line-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.line-item-name {
+    flex: 2;
+    padding: 8px !important;
+    font-size: 14px !important;
+}
+
+.line-item-qty {
+    width: 60px;
+    padding: 8px !important;
+    font-size: 14px !important;
+    text-align: center;
+}
+
+.line-item-price {
+    width: 80px;
+    padding: 8px !important;
+    font-size: 14px !important;
+    text-align: right;
+}
+
+.btn-icon-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: #fee;
+    color: #ef4444;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-icon-small:active {
+    background: #fdd;
+}
+
+/* Receipt Actions */
+.receipt-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.receipt-actions .btn {
+    flex: 1;
+    padding: 14px 24px;
+}
+
+/* Icon Buttons */
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:active {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .line-item {
+        flex-wrap: wrap;
+    }
+
+    .line-item-name {
+        flex: 1 1 100%;
+        margin-bottom: 8px;
+    }
+
+    .line-item-qty,
+    .line-item-price {
+        flex: 1;
+    }
+
+    .btn-icon-small {
+        margin-left: auto;
+    }
+}
+
+/* Loading overlay for save */
+.saving-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.saving-overlay .spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+}
+
+.saving-overlay p {
+    margin-top: 16px;
+    color: #333;
+    font-size: 14px;
+}
